@@ -48,3 +48,6 @@ app.*.map.json
 /ios/Flutter/Flutter.framework
 /ios/Flutter/App.framework
 .vscode/
+
+# Llama model
+models/
