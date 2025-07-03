@@ -28,16 +28,7 @@ class _ChatInputState extends State<ChatInput> {
     });
 
     final appState = context.read<AppState>();
-    appState.addMessageToHistory(text, true);
-
-    // TODO: Process the message through the LLM model
-    // For now, we'll just echo back a placeholder response
-    Future.delayed(const Duration(seconds: 1), () {
-      appState.addMessageToHistory(
-        'This is a placeholder response. The LLM model integration is pending.',
-        false,
-      );
-    });
+    appState.sendMessage(text);
   }
 
   @override
@@ -57,6 +48,7 @@ class _ChatInputState extends State<ChatInput> {
               Expanded(
                 child: TextField(
                   controller: _controller,
+                  enabled: !context.watch<AppState>().isProcessing,
                   onChanged: (text) {
                     setState(() {
                       _isComposing = text.isNotEmpty;
@@ -64,7 +56,9 @@ class _ChatInputState extends State<ChatInput> {
                   },
                   onSubmitted: _isComposing ? _handleSubmitted : null,
                   decoration: InputDecoration(
-                    hintText: 'Type your message...',
+                    hintText: context.watch<AppState>().isProcessing
+                        ? 'Processing...'
+                        : 'Type your message...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -77,8 +71,15 @@ class _ChatInputState extends State<ChatInput> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _isComposing
+                icon: context.watch<AppState>().isProcessing
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send),
+                onPressed:
+                    _isComposing && !context.watch<AppState>().isProcessing
                     ? () => _handleSubmitted(_controller.text)
                     : null,
               ),
