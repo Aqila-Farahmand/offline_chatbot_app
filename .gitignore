@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+# Xcode will place build artifacts here
+/ios/Flutter/flutter_assets
+/ios/Flutter/Flutter.framework
+/ios/Flutter/App.framework
+.vscode/

@@ -46,9 +46,7 @@ class _ChatInputState extends State<ChatInput> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-          ),
+          top: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
       ),
       child: SafeArea(
