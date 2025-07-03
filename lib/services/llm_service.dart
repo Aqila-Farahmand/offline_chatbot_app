@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:process_run/process_run.dart';
 
 class LLMService {
-  static const String MODEL_FILENAME = 'medllama2.gguf';
+  static const String MODEL_FILENAME = 'gemma3-1b.gguf';
   static bool _isInitialized = false;
-  static String? _modelPath;
+  static String? _modelPath = 'models/gemma3-1b.gguf';
 
   static Future<void> initialize() async {
     if (_isInitialized) return;
