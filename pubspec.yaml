@@ -17,6 +17,8 @@ dependencies:
   intl: ^0.19.0
   flutter_native_splash: ^2.4.0
   flutter_launcher_icons: ^0.13.1
+  process_run: ^0.14.2
+  http: ^1.2.0 # for downloading model files
 
 dev_dependencies:
   flutter_test:
