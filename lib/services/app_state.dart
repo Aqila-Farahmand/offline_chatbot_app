@@ -21,12 +21,25 @@ class AppState extends ChangeNotifier {
 
   Future<void> _initializeModel() async {
     try {
-      await LLMService.initialize();
-      setModelLoaded(true);
+      // Initialize model manager first
+      await _modelManager.initialize();
+
+      // Only try to initialize LLM if we have a model
+      if (_modelManager.selectedModel != null) {
+        await LLMService.initialize();
+        setModelLoaded(true);
+      } else {
+        setModelLoaded(false);
+      }
     } catch (e) {
       print('Error initializing model: $e');
       setModelLoaded(false);
     }
+  }
+
+  Future<void> reinitializeModel() async {
+    setModelLoaded(false);
+    await _initializeModel();
   }
 
   void setModelLoaded(bool value) {

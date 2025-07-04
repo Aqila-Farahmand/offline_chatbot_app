@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../widgets/chat_message.dart';
 import '../widgets/chat_input.dart';
+import '../widgets/model_selector.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -13,6 +14,22 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('MedicoAI'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const Dialog(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: ModelSelector(),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
@@ -42,13 +59,31 @@ class ChatScreen extends StatelessWidget {
             child: Consumer<AppState>(
               builder: (context, appState, child) {
                 if (!appState.isModelLoaded) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Loading AI Model...'),
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        const Text('No AI Model Loaded'),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => const Dialog(
+                                child: SingleChildScrollView(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: ModelSelector(),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add Model'),
+                        ),
                       ],
                     ),
                   );

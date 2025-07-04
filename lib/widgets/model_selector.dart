@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/model_manager.dart';
-import '../services/llm_service.dart';
+//import '../services/llm_service.dart';
+import '../services/app_state.dart';
 
 class ModelSelector extends StatelessWidget {
   const ModelSelector({super.key});
@@ -31,14 +32,18 @@ class ModelSelector extends StatelessWidget {
           // Add the model
           await modelManager.addModel(file.path!);
 
-          // Reinitialize LLM service with new model
-          await LLMService.initialize();
+          // Get AppState to reinitialize
+          if (context.mounted) {
+            final appState = Provider.of<AppState>(context, listen: false);
+            await appState.reinitializeModel();
+          }
 
-          // Show success message
+          // Show success message and close dialog
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Model added successfully')),
             );
+            Navigator.pop(context);
           }
         }
       }
@@ -110,8 +115,17 @@ class ModelSelector extends StatelessWidget {
                       );
                       modelManager.selectModel(model);
 
-                      // Reinitialize LLM service with new model
-                      await LLMService.initialize();
+                      // Get AppState to reinitialize
+                      final appState = Provider.of<AppState>(
+                        context,
+                        listen: false,
+                      );
+                      await appState.reinitializeModel();
+
+                      // Close dialog
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
                     }
                   },
                 ),
