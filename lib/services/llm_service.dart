@@ -49,7 +49,7 @@ Assistant:''';
       // Run llama.cpp with the model and prompt
       final shell = Shell();
       final result = await shell.run('''
-        llama -m "$_modelPath" \\
+        llama-cli -m "$_modelPath" \\
         -f "${promptFile.path}" \\
         --temp 0.7 \\
         --top_p 0.9 \\
