@@ -1,16 +1,19 @@
 import 'package:flutter/foundation.dart';
 import 'llm_service.dart';
+import 'model_manager.dart';
 
 class AppState extends ChangeNotifier {
   bool _isModelLoaded = false;
   String _currentMessage = '';
   List<Map<String, String>> _chatHistory = [];
   bool _isProcessing = false;
+  final ModelManager _modelManager = ModelManager();
 
   bool get isModelLoaded => _isModelLoaded;
   String get currentMessage => _currentMessage;
   List<Map<String, String>> get chatHistory => _chatHistory;
   bool get isProcessing => _isProcessing;
+  ModelManager get modelManager => _modelManager;
 
   AppState() {
     _initializeModel();
