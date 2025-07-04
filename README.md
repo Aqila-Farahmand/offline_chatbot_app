@@ -1,4 +1,4 @@
-# medicoai
+# offline_chatbot
 
 A new Flutter project.
 
