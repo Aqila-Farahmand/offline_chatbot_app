@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/llm_model.dart';
 
@@ -25,6 +26,29 @@ class ModelManager extends ChangeNotifier {
       await Directory(modelsPath).create(recursive: true);
     }
 
+    // Check for default model in assets and copy if no models exist
+    final modelFiles = Directory(modelsPath)
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.gguf'))
+        .toList();
+
+    if (modelFiles.isEmpty) {
+      try {
+        // Copy default model from assets
+        final byteData = await rootBundle.load(
+          'assets/models/gemma-2b-q4.gguf',
+        );
+        final buffer = byteData.buffer;
+        await File('$modelsPath/gemma-2b-q4.gguf').writeAsBytes(
+          buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
+        );
+        print('Copied default model to: $modelsPath/gemma-2b-q4.gguf');
+      } catch (e) {
+        print('No default model available in assets: $e');
+      }
+    }
+
     // Scan for downloaded models
     await _scanDownloadedModels();
   }
@@ -45,7 +69,7 @@ class ModelManager extends ChangeNotifier {
         name: filename.replaceAll('.gguf', ''),
         filename: filename,
         description: 'Local model',
-        contextSize: 2048, // Default context size
+        contextSize: 2048,
         isDownloaded: true,
       );
     }).toList();

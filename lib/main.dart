@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/chat_screen.dart';
 import 'services/app_state.dart';
+import 'services/model_manager.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +14,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AppState(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ModelManager()),
+        ChangeNotifierProvider(create: (_) => AppState()),
+      ],
       child: MaterialApp(
         title: 'MedicoAI',
         debugShowCheckedModeBanner: false,
@@ -32,7 +36,7 @@ class MyApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const DisclaimerScreen(),
+        home: const ChatScreen(),
       ),
     );
   }
