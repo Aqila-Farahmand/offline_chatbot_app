@@ -103,7 +103,7 @@ Assistant:''';
           '${Platform.numberOfProcessors - 1}',
           '--ctx_size',
           '2048',
-          '--max-tokens',
+          '-n',
           '512',
         ],
         environment: {
