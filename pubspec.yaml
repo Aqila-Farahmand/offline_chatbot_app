@@ -30,6 +30,5 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
-    - assets/models/
     - assets/models/gemma3-1b.gguf
   uses-material-design: true
