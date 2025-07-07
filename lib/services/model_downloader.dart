@@ -105,3 +105,4 @@ class ModelInfo {
     return '${sizeInGb.toStringAsFixed(1)}GB';
   }
 }
+ 

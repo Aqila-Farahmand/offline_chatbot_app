@@ -20,7 +20,7 @@ class ModelManager extends ChangeNotifier {
     try {
       // Get models directory from BundleUtils
       _modelsPath = await BundleUtils.getModelsDirectory();
-      print('Models directory: $_modelsPath');
+      print('Models directory initialized at: $_modelsPath');
 
       // Check for default model in assets and copy if no models exist
       final modelFiles = Directory(_modelsPath!)
@@ -29,22 +29,29 @@ class ModelManager extends ChangeNotifier {
           .where((file) => file.path.endsWith('.gguf'))
           .toList();
 
+      print('Found ${modelFiles.length} existing model(s)');
+
       if (modelFiles.isEmpty) {
+        print('No existing models found, attempting to copy default model...');
         try {
           // Copy default model from assets
           final defaultModelName = 'gemma3-1b.gguf';
+          print('Loading default model from assets: $defaultModelName');
+
           final byteData = await rootBundle.load(
             'assets/models/$defaultModelName',
           );
           final buffer = byteData.buffer;
           final modelFile = File('$_modelsPath/$defaultModelName');
 
+          print('Copying default model to: ${modelFile.path}');
           await modelFile.writeAsBytes(
             buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
           );
-          print('Copied default model to: ${modelFile.path}');
+          print('Successfully copied default model');
         } catch (e) {
-          print('No default model available in assets: $e');
+          print('Error copying default model: $e');
+          throw Exception('Failed to copy default model: $e');
         }
       }
 
@@ -62,32 +69,50 @@ class ModelManager extends ChangeNotifier {
     }
 
     try {
+      print('Scanning for models in: $_modelsPath');
+
       final modelFiles = Directory(_modelsPath!)
           .listSync()
           .whereType<File>()
           .where((file) => file.path.endsWith('.gguf'))
           .toList();
 
-      print('Found ${modelFiles.length} model(s) in $_modelsPath');
-      for (var file in modelFiles) {
-        print('Model file: ${file.path}');
-      }
+      print('Found ${modelFiles.length} model(s)');
 
-      _availableModels = modelFiles.map((file) {
+      _availableModels = [];
+      for (var file in modelFiles) {
         final filename = file.path.split('/').last;
-        return LLMModel(
-          name: filename.replaceAll('.gguf', ''),
-          filename: filename,
-          description: 'Local model',
-          contextSize: 2048,
-          isDownloaded: true,
-        );
-      }).toList();
+        print('Processing model: $filename');
+
+        try {
+          final fileSize = await file.length();
+          print(
+            'Model size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB',
+          );
+
+          _availableModels.add(
+            LLMModel(
+              name: filename.replaceAll('.gguf', ''),
+              filename: filename,
+              description:
+                  'Local model (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)',
+              contextSize: 2048,
+              isDownloaded: true,
+            ),
+          );
+        } catch (e) {
+          print('Error processing model $filename: $e');
+          // Continue with next model
+          continue;
+        }
+      }
 
       // Select first available model if none selected
       if (_selectedModel == null && _availableModels.isNotEmpty) {
         _selectedModel = _availableModels.first;
         print('Selected model: ${_selectedModel!.filename}');
+      } else if (_availableModels.isEmpty) {
+        print('Warning: No models available after scan');
       }
 
       notifyListeners();
