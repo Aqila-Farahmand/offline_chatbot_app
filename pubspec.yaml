@@ -1,4 +1,4 @@
-name: medicoai
+name: medico_ai
 description: "Offline Medical Chatbot"
 publish_to: "none"
 version: 0.1.0
