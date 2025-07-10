@@ -33,9 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
         _signUp();
         return;
       }
-      setState(() {
-        _error = e.message;
-      });
+      debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
+      setState(() => _error = e.message);
     } catch (e) {
       setState(() {
         _error = 'An unexpected error occurred';
@@ -56,9 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _error = e.message;
-      });
+      debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
+      setState(() => _error = e.message);
     } catch (e) {
       setState(() {
         _error = 'An unexpected error occurred';
