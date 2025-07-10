@@ -5,6 +5,7 @@ import '../widgets/chat_message.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/model_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/edit_profile_dialog.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -15,6 +16,16 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('MedicoAI'),
         actions: [
+          IconButton(
+            tooltip: 'Edit Profile',
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => const EditProfileDialog(),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Logout',
             icon: const Icon(Icons.logout),

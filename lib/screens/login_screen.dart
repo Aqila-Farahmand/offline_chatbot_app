@@ -15,6 +15,30 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _error;
 
+  Future<void> _resetPassword() async {
+    if (_emailController.text.trim().isEmpty) {
+      setState(() => _error = 'Enter your email to reset password.');
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailController.text.trim(),
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent.')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
+      setState(() => _error = e.message);
+    } catch (_) {
+      setState(() => _error = 'An unexpected error occurred');
+    }
+  }
+
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -53,10 +77,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signUp() async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+
+      // Send verification email to the newly created user.
+      await credential.user?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
       setState(() => _error = e.message);
@@ -133,6 +161,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const CircularProgressIndicator.adaptive()
                         : const Text('Continue'),
                   ),
+                ),
+                TextButton(
+                  onPressed: _isLoading ? null : _resetPassword,
+                  child: const Text('Forgot password?'),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),

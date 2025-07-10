@@ -11,6 +11,13 @@ import 'screens/login_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Listen for authentication state changes and print the user UID when available.
+  FirebaseAuth.instance.authStateChanges().listen((User? user) {
+    if (user != null) {
+      debugPrint('Signed-in user UID: ${user.uid}');
+    }
+  });
   runApp(const MyApp());
 }
 
@@ -45,13 +52,18 @@ class MyApp extends StatelessWidget {
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
+              // While Firebase is still figuring out who the user is, show a loader
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
             }
+
+            // If we have a logged-in user => go straight to chat
             if (snapshot.hasData) {
               return const ChatScreen();
             }
+
+            // Otherwise, show the sign-in / sign-up form
             return const LoginScreen();
           },
         ),
@@ -102,5 +114,18 @@ class DisclaimerScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+void printProviderProfiles() {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return; // not signed in
+
+  for (final providerProfile in user.providerData) {
+    final providerId = providerProfile.providerId; // e.g. google.com
+    final uid = providerProfile.uid; // provider-specific UID
+    final name = providerProfile.displayName; // may be null
+    final email = providerProfile.email; // may be null
+    debugPrint('[$providerId] uid=$uid  name=$name  email=$email');
   }
 }
