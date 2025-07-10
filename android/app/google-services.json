@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "436937306861",
+    "project_id": "medicoai-65160",
+    "storage_bucket": "medicoai-65160.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:436937306861:android:cf85ca7fe1d649e85752e4",
+        "android_client_info": {
+          "package_name": "com.example.medicoai"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC20RMhT7HUQ9JUheWLouWNKOVEpk_gbg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
