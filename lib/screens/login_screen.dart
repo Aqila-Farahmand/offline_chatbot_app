@@ -32,6 +32,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (e.code == 'user-not-found') {
         _signUp();
         return;
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        setState(() => _error = 'Incorrect password – try again.');
+        return;
       }
       debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
       setState(() => _error = e.message);
