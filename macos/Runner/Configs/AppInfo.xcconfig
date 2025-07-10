@@ -12,3 +12,7 @@ PRODUCT_BUNDLE_IDENTIFIER = it.aqila.farahmand.medicoai.macos
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 Aqila Farahmand. All rights reserved.
+
+// Keychain Sharing
+KEYCHAIN_ACCESS_GROUPS = $(AppIdentifierPrefix)$(CFBundleIdentifier)
+
