@@ -4,6 +4,7 @@ import '../services/app_state.dart';
 import '../widgets/chat_message.dart';
 import '../widgets/chat_input.dart';
 import '../widgets/model_selector.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -14,6 +15,13 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('MedicoAI'),
         actions: [
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
