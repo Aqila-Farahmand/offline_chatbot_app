@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+// Removed path_provider; write directly to a folder relative to the current working directory.
 
 class ChatHistoryLogger {
   // Returns the log file for the current date, creating directories/file + header if needed.
   static Future<File> _getLogFile() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final logDir = Directory(p.join(directory.path, 'chat_logs'));
+    // Base directory is where the application was launched (project root during development).
+    final baseDir = Directory.current;
+    final logDir = Directory(p.join(baseDir.path, 'chat_logs'));
     if (!await logDir.exists()) {
       await logDir.create(recursive: true);
     }
