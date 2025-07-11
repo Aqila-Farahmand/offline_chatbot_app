@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _lastnameController = TextEditingController();
   bool _isLoading = false;
+  bool _isSignUp = false; // toggles between login and sign-up modes
   String? _error;
 
   Future<void> _resetPassword() async {
@@ -56,10 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text,
       );
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        _signUp();
-        return;
-      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
         setState(() => _error = 'Incorrect password – try again.');
         return;
       }
@@ -79,6 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) return;
+
     try {
       final credential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -131,6 +131,72 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 32),
+                // Toggle buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => setState(() {
+                              _isSignUp = false;
+                            }),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: !_isSignUp
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      child: const Text('Log In'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () => setState(() {
+                              _isSignUp = true;
+                            }),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isSignUp
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      child: const Text('Sign Up'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (_isSignUp) ...[
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'First name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (!_isSignUp) return null;
+                      if (value == null || value.isEmpty) {
+                        return 'First name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _lastnameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Last name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (!_isSignUp) return null;
+                      if (value == null || value.isEmpty) {
+                        return 'Last name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
@@ -170,16 +236,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _signIn,
+                    onPressed: _isLoading
+                        ? null
+                        : _isSignUp
+                        ? _signUp
+                        : _signIn,
                     child: _isLoading
                         ? const CircularProgressIndicator.adaptive()
-                        : const Text('Continue'),
+                        : Text(_isSignUp ? 'Sign Up' : 'Log In'),
                   ),
                 ),
-                TextButton(
-                  onPressed: _isLoading ? null : _resetPassword,
-                  child: const Text('Forgot password?'),
-                ),
+                if (!_isSignUp)
+                  TextButton(
+                    onPressed: _isLoading ? null : _resetPassword,
+                    child: const Text('Forgot password?'),
+                  ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Text(_error!, style: const TextStyle(color: Colors.red)),
