@@ -120,7 +120,12 @@ Assistant:''';
 
       // Wrap result in Shell-like Output
       final responseText = result.stdout.toString();
-      final response = responseText.split('Assistant:').last.trim();
+      final rawResponse = responseText.split('Assistant:').last.trim();
+      // Remove an undesired leading "model" prefix if present (case-insensitive)
+      final response = rawResponse.replaceFirst(
+        RegExp(r'^model\s*:?\s*', caseSensitive: false),
+        '',
+      );
 
       // Clean up the temporary file
       await promptFile.delete();
