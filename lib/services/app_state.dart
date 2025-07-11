@@ -39,6 +39,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> reinitializeModel() async {
+    // Dispose of current LLM instance so that it can be re-initialized with
+    // the newly selected model. Without this, the static LLMService would keep
+    // using the previously loaded model.
+    LLMService.dispose();
+
     setModelLoaded(false);
     await _initializeModel();
   }

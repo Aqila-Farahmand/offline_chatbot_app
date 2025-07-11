@@ -117,12 +117,22 @@ class ModelManager extends ChangeNotifier {
         }
       }
 
-      // Select first available model if none selected
-      if (_selectedModel == null && _availableModels.isNotEmpty) {
-        _selectedModel = _availableModels.first;
-        print('Selected model: ${_selectedModel!.filename}');
-      } else if (_availableModels.isEmpty) {
+      // Ensure we always have a valid selected model.
+      if (_availableModels.isEmpty) {
+        // No models left – clear selection.
+        _selectedModel = null;
         print('Warning: No models available after scan');
+      } else {
+        final stillExists =
+            _selectedModel != null &&
+            _availableModels.any((m) => m.filename == _selectedModel!.filename);
+
+        if (!stillExists) {
+          // Either nothing was selected before, or the previously selected
+          // model is no longer present. Default to the first available model.
+          _selectedModel = _availableModels.first;
+          print('Selected model: ${_selectedModel!.filename}');
+        }
       }
 
       notifyListeners();
