@@ -4,14 +4,42 @@ import 'package:path/path.dart' as p;
 // Removed path_provider; write directly to a folder relative to the current working directory.
 
 class ChatHistoryLogger {
-  // Returns the log file for the current date, creating directories/file + header if needed.
-  static Future<File> _getLogFile() async {
-    // Base directory is where the application was launched (project root during development).
-    final baseDir = Directory.current;
-    final logDir = Directory(p.join(baseDir.path, 'chat_logs'));
+  static Directory? _cachedLogDir;
+
+  static Future<Directory> _resolveLogDir() async {
+    if (_cachedLogDir != null) return _cachedLogDir!;
+
+    final initialDir = Directory.current;
+    Directory dir = initialDir;
+
+    // Walk up directories until we find pubspec.yaml or reach root.
+    while (true) {
+      final pubspec = File(p.join(dir.path, 'pubspec.yaml'));
+      if (await pubspec.exists()) {
+        break;
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) {
+        // Reached filesystem root; no pubspec found. Use the initial directory.
+        dir = initialDir;
+        break;
+      }
+      dir = parent;
+    }
+
+    final logDir = Directory(p.join(dir.path, 'chat_logs'));
     if (!await logDir.exists()) {
       await logDir.create(recursive: true);
     }
+
+    print('[ChatHistoryLogger] Logs directory: ${logDir.path}');
+    _cachedLogDir = logDir;
+    return logDir;
+  }
+
+  /// Returns the log file for the current date, creating directories/file + header if needed.
+  static Future<File> _getLogFile() async {
+    final logDir = await _resolveLogDir();
 
     final String date = DateTime.now()
         .toIso8601String()
