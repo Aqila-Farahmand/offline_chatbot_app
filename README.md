@@ -3,11 +3,11 @@
 MedicoAI is a cross-platform Flutter application that runs a Large Language Model **completely on-device**.  
 It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g. remote clinics, airplanes, or poor-connectivity environments).
 
-⚠️ **Disclaimer:** MedicoAI is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified health-care provider with any questions you may have.
+**Disclaimer:** MedicoAI is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified health-care provider with any questions you may have.
 
 ---
 
-## ✨ Features
+## Features
 
 - **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp).
 - **Multi-platform:** Android, iOS, macOS, Windows, Linux (desktop & mobile).  
@@ -19,7 +19,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 
 ---
 
-## 🗂 Project Structure (key folders)
+## Project Structure (key folders)
 
 ```
 lib/
@@ -35,7 +35,7 @@ assets/models/              # Optional pre-bundled .gguf models
 
 ---
 
-## ⚙️ Prerequisites
+##  Prerequisites
 
 1. **Flutter ≥ 3.16** with the desired platform SDKs installed (`flutter doctor`).
 2. A **compiled `llama.cpp` binary** (`llama-cli`) for each native platform you intend to target.  
@@ -44,14 +44,14 @@ assets/models/              # Optional pre-bundled .gguf models
 3. One or more **GGUF models** (e.g. `llama-2-7b.Q4_K_M.gguf`). Place them in `assets/models/` (bundled) **or** allow the app to download/locate them at runtime.
 4. `firebase_options.dart` created via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
 
-## 🔗 Connectivity Notes
+## Connectivity Notes
 
 - **First-time login (or re-login after a token expiry / manual sign-out) requires an active internet connection** so that Firebase Authentication can verify user credentials.
 - Ensure you have **deployed your Firebase project (Authentication + Firestore/Database rules)** before distributing the app. Credentials are fetched once, after which **all chat generation happens completely offline** — no prompts or model weights leave the device.
 
 ---
 
-## 🚀 Running the App (development)
+## Running the App (development)
 
 Clone & fetch dependencies:
 
@@ -80,7 +80,7 @@ Select a model and start chatting!
 
 ---
 
-## 📦 Building Release Binaries
+## Building Release Binaries
 
 ```bash
 # Android (APK)
@@ -103,7 +103,7 @@ flutter build windows --release
 
 ---
 
-## 🧩 Extending / Customising
+## Extending / Customising
 
 • **Swap models:** Add any `.gguf` file to the application-support _models_ folder or use the in-app _Add model_ flow (to be implemented).  
 • **Temperature / Top-p:** Modify the arguments passed in `LLMService.generateResponse()` to tune creativity.  
@@ -111,6 +111,6 @@ flutter build windows --release
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
