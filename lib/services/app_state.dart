@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'llm_service.dart';
 import 'model_manager.dart';
+import '../utils/chat_history_logger.dart';
 
 class AppState extends ChangeNotifier {
   bool _isModelLoaded = false;
@@ -64,6 +65,9 @@ class AppState extends ChangeNotifier {
 
       // Generate response using local LLM
       final response = await LLMService.generateResponse(message);
+
+      // Persist question-response pair to CSV
+      await ChatHistoryLogger.log(message, response);
 
       // Add bot response to chat
       addMessageToHistory(response, false);
