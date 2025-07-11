@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/user_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +13,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
   bool _isLoading = false;
   String? _error;
 
@@ -83,8 +86,19 @@ class _LoginScreenState extends State<LoginScreen> {
             password: _passwordController.text,
           );
 
-      // Send verification email to the newly created user.
-      await credential.user?.sendEmailVerification();
+      final userAuth = credential.user;
+
+      // Persist additional profile info via the UserService
+      if (userAuth != null) {
+        await UserService().createUserProfile(
+          uid: userAuth.uid,
+          name: _nameController.text.trim(),
+          lastname: _lastnameController.text.trim(),
+          email: userAuth.email ?? '',
+        );
+      }
+
+      await userAuth?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
       debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
       setState(() => _error = e.message);
@@ -182,6 +196,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _nameController.dispose();
+    _lastnameController.dispose();
     super.dispose();
   }
 }
