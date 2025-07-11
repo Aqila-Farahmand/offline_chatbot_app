@@ -52,5 +52,4 @@ app.*.map.json
 # Llama model
 models/
 
-# cache files
-cache/
+
