@@ -24,7 +24,6 @@ dependencies:
   firebase_core: ^3.15.1
   firebase_auth: ^5.6.2
   cloud_firestore: ^5.5.0
-  
 
 dev_dependencies:
   flutter_test:
@@ -34,5 +33,5 @@ dev_dependencies:
 flutter:
   assets:
     - assets/images/
-    - assets/models/gemma3-1b.gguf
+    - assets/models/
   uses-material-design: true

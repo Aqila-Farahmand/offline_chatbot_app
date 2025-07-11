@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../utils/bundle_utils.dart';
@@ -22,44 +23,53 @@ class ModelManager extends ChangeNotifier {
       _modelsPath = await BundleUtils.getModelsDirectory();
       print('Models directory initialized at: $_modelsPath');
 
-      // Check for default model in assets and copy if no models exist
-      final modelFiles = Directory(_modelsPath!)
-          .listSync()
-          .whereType<File>()
-          .where((file) => file.path.endsWith('.gguf'))
-          .toList();
-
-      print('Found ${modelFiles.length} existing model(s)');
-
-      if (modelFiles.isEmpty) {
-        print('No existing models found, attempting to copy default model...');
-        try {
-          // Copy default model from assets
-          final defaultModelName = 'gemma3-1b.gguf';
-          print('Loading default model from assets: $defaultModelName');
-
-          final byteData = await rootBundle.load(
-            'assets/models/$defaultModelName',
-          );
-          final buffer = byteData.buffer;
-          final modelFile = File('$_modelsPath/$defaultModelName');
-
-          print('Copying default model to: ${modelFile.path}');
-          await modelFile.writeAsBytes(
-            buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
-          );
-          print('Successfully copied default model');
-        } catch (e) {
-          print('Error copying default model: $e');
-          throw Exception('Failed to copy default model: $e');
-        }
-      }
-
-      // Scan for downloaded models
+      // Copy any .gguf models bundled in assets into the writable models
+      // directory so that they can be listed and used like normal files.
+      await _copyBundledModels();
+      // Scan for available models after copying bundled ones
       await _scanDownloadedModels();
     } catch (e) {
       print('Error initializing ModelManager: $e');
       rethrow;
+    }
+  }
+
+  /// Copy all .gguf files that are packaged under assets/models/ into the
+  /// app's writable models directory. This ensures they are accessible via a
+  /// regular file path for the llama runtime and appear in the model list.
+  Future<void> _copyBundledModels() async {
+    try {
+      if (_modelsPath == null) {
+        throw Exception('Models path not initialized');
+      }
+
+      final manifestContent = await rootBundle.loadString('AssetManifest.json');
+      final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
+
+      for (final assetPath in manifestMap.keys) {
+        if (assetPath.startsWith('assets/models/') &&
+            assetPath.endsWith('.gguf')) {
+          final filename = assetPath.split('/').last;
+          final destPath = '$_modelsPath/$filename';
+          final destFile = File(destPath);
+
+          if (!await destFile.exists()) {
+            print('Copying bundled model $filename to writable directory...');
+            final byteData = await rootBundle.load(assetPath);
+            final buffer = byteData.buffer;
+            await destFile.writeAsBytes(
+              buffer.asUint8List(
+                byteData.offsetInBytes,
+                byteData.lengthInBytes,
+              ),
+            );
+            print('Copied $filename');
+          }
+        }
+      }
+    } catch (e) {
+      // Log but do not fail initialisation – app can still run if copy fails.
+      print('Error copying bundled models: $e');
     }
   }
 
