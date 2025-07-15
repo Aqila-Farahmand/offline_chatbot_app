@@ -68,11 +68,23 @@ class AppState extends ChangeNotifier {
       // Add user message to chat
       addMessageToHistory(message, true);
 
-      // Generate response using local LLM
-      final response = await LLMService.generateResponse(message);
+      // Get model info
+      final model = _modelManager.selectedModel;
+      final modelName = model?.name ?? 'unknown';
 
-      // Persist question-response pair to CSV
-      await ChatHistoryLogger.log(message, response);
+      // Generate response using local LLM and measure time
+      final stopwatch = Stopwatch()..start();
+      final response = await LLMService.generateResponse(message);
+      stopwatch.stop();
+      final responseTimeMs = stopwatch.elapsedMilliseconds;
+
+      // Persist model evaluation info to CSV
+      await ChatHistoryLogger.logModelEval(
+        modelName: modelName,
+        userQuestion: message,
+        modelResponse: response,
+        responseTimeMs: responseTimeMs,
+      );
 
       // Add bot response to chat
       addMessageToHistory(response, false);
