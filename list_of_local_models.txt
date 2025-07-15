@@ -2,8 +2,8 @@
 link: https://huggingface.co/unsloth/Qwen3-0.6B-GGUF?show_file_info=Qwen3-0.6B-Q4_0.gguf
 2. google/gemma-3-1b-it-qat-q4_0-gguf
 link: https://huggingface.co/google/gemma-3-1b-it-qat-q4_0-gguf
-3. Meta-Llama-3.1-8B.gguf (size: 4.66B) and Multilingual model
-link:  https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF?show_file_info=Meta-Llama-3.1-8B-Instruct-Q4_0_4_4.gguf
+3. Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+link:  https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/blob/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
 
 Depending on the size and storage of the user we may opt for any of powerful models available:
 https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
