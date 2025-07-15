@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+
 // Removed path_provider; write directly to a folder relative to the current working directory.
 
 class ChatHistoryLogger {
@@ -50,14 +51,21 @@ class ChatHistoryLogger {
 
     if (!await file.exists()) {
       // Create file and write header row
-      await file.writeAsString('question,response\n');
+      await file.writeAsString(
+        'model_name,question,response,response_time_ms\n',
+      );
     }
 
     return file;
   }
 
-  /// Logs a single user [question] and LLM [response] pair to the CSV file.
-  static Future<void> log(String question, String response) async {
+  /// Logs a single model response to the CSV file.
+  static Future<void> logModelEval({
+    required String modelName,
+    required String userQuestion,
+    required String modelResponse,
+    required int responseTimeMs,
+  }) async {
     try {
       final file = await _getLogFile();
 
@@ -69,13 +77,12 @@ class ChatHistoryLogger {
             .replaceAll('\r', ' ');
       }
 
-      final sanitizedQuestion = sanitize(question);
-      final sanitizedResponse = sanitize(response);
-      final csvLine = '"$sanitizedQuestion","$sanitizedResponse"\n';
-
+      final csvLine =
+          '"${sanitize(modelName)}","${sanitize(userQuestion)}","${sanitize(modelResponse)}",$responseTimeMs\n'
+              .replaceFirst('userQuestion', 'question')
+              .replaceFirst('modelResponse', 'response');
       await file.writeAsString(csvLine, mode: FileMode.append, flush: true);
     } catch (e) {
-      // Failure to write should not break the app; just log the error.
       print('ChatHistoryLogger error: $e');
     }
   }
