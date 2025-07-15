@@ -121,11 +121,15 @@ Assistant:''';
       // Wrap result in Shell-like Output
       final responseText = result.stdout.toString();
       final rawResponse = responseText.split('Assistant:').last.trim();
-      // Remove an undesired leading "model" prefix if present (case-insensitive)
-      final response = rawResponse.replaceFirst(
-        RegExp(r'^model\s*:?\s*', caseSensitive: false),
-        '',
+      // Remove any leading '<|assistant|>', 'Assistant', 'Assistant:', 'Assistant <...>', 'model', 'model:', 'model <...>', or similar (case-insensitive, repeated)
+      String response = rawResponse;
+      final prefixPattern = RegExp(
+        r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
+        caseSensitive: false,
       );
+      while (prefixPattern.hasMatch(response)) {
+        response = response.replaceFirst(prefixPattern, '').trim();
+      }
 
       // Clean up the temporary file
       await promptFile.delete();
