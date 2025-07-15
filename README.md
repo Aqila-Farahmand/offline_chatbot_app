@@ -35,14 +35,16 @@ assets/models/              # Optional pre-bundled .gguf models
 
 ---
 
-##  Prerequisites
+## Prerequisites
 
 1. **Flutter ≥ 3.16** with the desired platform SDKs installed (`flutter doctor`).
-2. A **compiled `llama.cpp` binary** (`llama-cli`) for each native platform you intend to target.  
+2. **Xcode** (latest version recommended) is required for building and running on macOS and iOS. Install from the Mac App Store and ensure you have agreed to the license by running `sudo xcodebuild -license`.
+3. An **Apple development certificate** is required to build and run apps on real Apple devices or to distribute through the App Store. You can set this up in Xcode under Preferences > Accounts, or visit [Apple's official documentation](https://developer.apple.com/support/certificates/) for more information.
+4. A **compiled `llama.cpp` binary** (`llama-cli`) for each native platform you intend to target.  
    • macOS: provided under `macos/Runner/Resources/llama/`.  
    • Others: drop the binary & required `.dll/.so/.dylib` files in the equivalent `.../Resources/llama/` directory.
-3. One or more **GGUF models** (e.g. `llama-2-7b.Q4_K_M.gguf`). Place them in `assets/models/` (bundled) **or** allow the app to download/locate them at runtime.
-4. `firebase_options.dart` created via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
+5. One or more **GGUF models** (e.g. `llama-2-7b.Q4_K_M.gguf`). Place them in `assets/models/` (bundled) **or** allow the app to download/locate them at runtime.
+6. `firebase_options.dart` created via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
 
 ## Connectivity Notes
 
