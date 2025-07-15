@@ -46,10 +46,13 @@ class ModelManager extends ChangeNotifier {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
 
+      // Collect all .gguf model filenames in assets/models
+      final assetModelFilenames = <String>{};
       for (final assetPath in manifestMap.keys) {
         if (assetPath.startsWith('assets/models/') &&
             assetPath.endsWith('.gguf')) {
           final filename = assetPath.split('/').last;
+          assetModelFilenames.add(filename);
           final destPath = '$_modelsPath/$filename';
           final destFile = File(destPath);
 
@@ -65,6 +68,19 @@ class ModelManager extends ChangeNotifier {
             );
             print('Copied $filename');
           }
+        }
+      }
+
+      // Clean up: Remove any .gguf files in the writable models dir that are no longer in assets/models
+      final dir = Directory(_modelsPath!);
+      final files = dir.listSync().whereType<File>().where(
+        (f) => f.path.endsWith('.gguf'),
+      );
+      for (final file in files) {
+        final filename = file.path.split('/').last;
+        if (!assetModelFilenames.contains(filename)) {
+          print('Removing orphaned model: $filename');
+          await file.delete();
         }
       }
     } catch (e) {
