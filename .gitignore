@@ -52,4 +52,19 @@ app.*.map.json
 # Llama model
 models/
 
+# eval related
+.deepeval/
+.env/
+build/
+cache/
+# Coverage reports
+coverage/
+# Temporary files
+temp/
+# Logs
+logs/
+# Backup files
+*.bak
+*.tmp
+
 
