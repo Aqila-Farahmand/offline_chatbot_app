@@ -1,0 +1,16 @@
+.env
+.deepeval
+# Ignore DeepEval cache directory
+.cache/
+# Ignore DeepEval dataset directory
+dataset/
+# Ignore DeepEval logs
+logs/
+# Ignore DeepEval temporary files
+*.tmp
+# Ignore DeepEval configuration files
+*.config
+# ignore pycache files
+__pycache__/
+# Ignore Python bytecode files
+*.pyc
