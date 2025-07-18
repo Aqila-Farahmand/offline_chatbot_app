@@ -14,3 +14,6 @@ logs/
 __pycache__/
 # Ignore Python bytecode files
 *.pyc
+# ignore env file
+.env
+.secrets
