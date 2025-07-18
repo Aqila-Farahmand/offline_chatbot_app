@@ -39,7 +39,8 @@ assets/models/              # Optional pre-bundled .gguf models
 
 1. **Flutter ≥ 3.16** with the desired platform SDKs installed (`flutter doctor`).
 2. **Xcode** (latest version recommended) is required for building and running on macOS and iOS. Install from the Mac App Store and ensure you have agreed to the license by running `sudo xcodebuild -license`.
-3. An **Apple development certificate** is required to build and run apps on real Apple devices or to distribute through the App Store. You can set this up in Xcode under Preferences > Accounts, or visit [Apple's official documentation](https://developer.apple.com/support/certificates/) for more information.
+3. **Note on Apple Development Certificates** For local development and testing on simulators or your own connected Apple devices, a paid Apple Development Certificate is generally NOT required. Xcode allows you to sign apps with your free Apple ID. You can manage your Apple ID in Xcode under `Xcode > Settings (or Preferences) > Accounts`. A paid Apple Developer Program membership is only necessary for distributing your app via the App Store, TestFlight, or for advanced team provisioning.
+
 4. A **compiled `llama.cpp` binary** (`llama-cli`) for each native platform you intend to target.  
    • macOS: provided under `macos/Runner/Resources/llama/`.  
    • Others: drop the binary & required `.dll/.so/.dylib` files in the equivalent `.../Resources/llama/` directory.
