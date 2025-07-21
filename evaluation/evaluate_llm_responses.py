@@ -10,6 +10,7 @@ import os
 # cluster url
 LLM_URL = "localhost"
 LLM_PORT = 11434
+LLM_MODEL = "llama3.1:8b"
 
 # Load the test dataset with reference responses
 TEST_DATA_PATH = DATA_PATH / 'chat_history_2025-07-15.csv'
@@ -23,7 +24,7 @@ if not required_cols.issubset(df.columns):
 # Custom LLM call function for both metric and judge
 
 
-def call_custom_llm(prompt, model="llama3.1:8b", host=LLM_URL, port=LLM_PORT, system_prompt=None):
+def call_custom_llm(prompt, model=LLM_MODEL, host=LLM_URL, port=LLM_PORT, system_prompt=None):
     payload = {
         'model': model,
         'prompt': prompt,
@@ -47,7 +48,8 @@ def call_custom_llm(prompt, model="llama3.1:8b", host=LLM_URL, port=LLM_PORT, sy
 
 class CustomConversationalGEval(ConversationalGEval):
     def _call_llm(self, prompt, **kwargs):
-        model = "llama3.1:8b"
+        model = kwargs.get('model', LLM_MODEL)
+
         return call_custom_llm(prompt, model=model, host=LLM_URL, port=LLM_PORT)
 
 
@@ -63,7 +65,7 @@ medicoai_metric = CustomConversationalGEval(
 )
 
 
-def judge_response_with_llm(question, response, model="llama3.1:8b", host=LLM_URL, port=LLM_PORT):
+def judge_response_with_llm(question, response, model=LLM_MODEL, host=LLM_URL, port=LLM_PORT):
     """
     Uses the LLM from our cluster to judge the quality of the response to the question.
     Returns a score (1-5) and a reason string.
@@ -106,14 +108,14 @@ for idx, row in df.iterrows():
         Turn(role="assistant", content=row['response'])
     ]
     test_case = ConversationalTestCase(turns=turns)
-    # Always use the local Ollama model 'llama3.1:8b'
+    # Always use the local model 'LLM_MODEL' for evaluation
     # Run the metric
     medicoai_metric.measure(test_case)
     # LLM-as-a-Judge evaluation
     judge_score, judge_reason = judge_response_with_llm(
-        row['question'], row['response'], model="llama3.1:8b", host=LLM_URL, port=LLM_PORT)
+        row['question'], row['response'], model=LLM_MODEL, host=LLM_URL, port=LLM_PORT)
     results.append({
-        'model': "llama3.1:8b",
+        'model': LLM_MODEL,
         'question': row['question'],
         'response': row['response'],
         'reference_response': row['reference_response'],
