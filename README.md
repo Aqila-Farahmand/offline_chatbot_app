@@ -71,10 +71,10 @@ cd ios && pod install && cd ..
 Launch the app on any connected device/emulator:
 
 ```bash
-flutter run -d macos     # or -d android / -d ios / -d windows / -d linux
+flutter run -d macos     # or -d android / -d iphone / -d chrome / -d linux
 ```
 
-During the first launch the app will:
+During the first launch, the app will:
 
 1. Copy the bundled `llama-cli` and dynamic libraries into the app support directory (macOS example).
 2. Scan `Application Support/models` for `.gguf` files and populate the **Model Selector** dialog.
