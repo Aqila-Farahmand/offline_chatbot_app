@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.medicoai</string>
+	<string>it.aqila.farahmand.medicoai.ios</string>
 	<key>PROJECT_ID</key>
 	<string>medicoai-65160</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:436937306861:ios:2c799a1e82ed8c5d5752e4</string>
+	<string>1:436937306861:ios:fd8dae33d5e2390d5752e4</string>
 </dict>
 </plist>
