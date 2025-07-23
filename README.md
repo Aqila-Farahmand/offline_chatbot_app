@@ -52,26 +52,92 @@ assets/models/              # Optional pre-bundled .gguf models
 - **First-time login (or re-login after a token expiry / manual sign-out) requires an active internet connection** so that Firebase Authentication can verify user credentials.
 - Ensure you have **deployed your Firebase project (Authentication + Firestore/Database rules)** before distributing the app. Credentials are fetched once, after which **all chat generation happens completely offline** — no prompts or model weights leave the device.
 
----
+## Running the App (Development)
 
-## Running the App (development)
+Follow these steps to set up and run the application in a development environment.
 
-Clone & fetch dependencies:
+1. Fetch Dependencies
 
-```bash
-flutter pub get            # install Dart/Flutter packages
+   Navigate to the project's root directory in your terminal and install the necessary Dart and Flutter packages:
+
+```Bash
+flutter pub get
 ```
 
-(Optional) On iOS/macOS install CocoaPods:
+2. Platform-Specific Setup (iOS/macOS only)
 
-```bash
+   If you are developing for iOS or macOS, you need to install CocoaPods, which manages native dependencies for these platforms.
+
+```Bash
 cd ios && pod install && cd ..
 ```
 
-Launch the app on any connected device/emulator:
+Note:
 
-```bash
-flutter run -d macos     # or -d android / -d iphone / -d chrome / -d linux
+If you encounter issues with pod install, ensure you have CocoaPods installed on your system (`sudo gem install cocoapods`) and that Xcode command-line tools are properly configured (xcode-select --install).
+
+3. Launch the App
+
+   You can launch the app on any connected device, emulator, or simulator.
+
+- A. List Available Devices
+
+  First, identify the available devices by running:
+
+```Bash
+flutter devices
+```
+
+This command will output a list of recognized devices with their unique identifiers (e.g., macOS, sdk gphone64 arm64, your_iphone_device_id, chrome, etc.).
+
+- B. Run on a Specific Device
+
+  Once you have the device ID, use the -d flag to specify your target. Replace [device_id] with the actual ID from the flutter devices output.
+
+```Bash
+flutter run -d [device_id]
+```
+
+Examples:
+
+macOS Desktop:
+
+```Bash
+flutter run -d macos
+```
+
+Android Emulator/Device:
+
+```Bash
+flutter run -d sdk gphone64 arm64 # (or your specific Android emulator/device ID)
+```
+
+iOS Simulator/Device:
+
+```Bash
+flutter run -d AAAA-BBBB-CCCC-DDDD-EEEE # (replace with your iPhone's long ID)
+```
+
+Or for a simulator:
+
+```Bash
+flutter run -d "iPhone 15 Pro Max" # (if the name is unique)
+```
+
+Tip for iOS:
+
+- For physical iOS devices, ensure "Developer Mode" is enabled on your iPhone (iOS 16+), and you have trusted your computer. You may also need to open ios/Runner.xcworkspace in Xcode once to set up development team signing under the "Signing & Capabilities" tab for the Runner target.
+
+Web (Chrome):
+
+```Bash
+flutter run -d chrome
+```
+
+Linux Desktop:
+
+```Bash
+flutter run -d linux
 ```
 
 During the first launch, the app will:
