@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:436937306861:android:cf85ca7fe1d649e85752e4",
+        "mobilesdk_app_id": "1:436937306861:android:8e46553c382b56d05752e4",
         "android_client_info": {
-          "package_name": "com.example.medicoai"
+          "package_name": "it.aqila.farahmand.medicoai"
         }
       },
       "oauth_client": [],
