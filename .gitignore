@@ -66,5 +66,8 @@ logs/
 # Backup files
 *.bak
 *.tmp
+# add ide related
+coverage
+
 
 
