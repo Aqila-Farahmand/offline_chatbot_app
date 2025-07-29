@@ -40,6 +40,13 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        ndk {
+            // Specifies the ABIs that CMake should build for.
+            // Should match ANDROID_ABIS in CMakeLists.txt
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
+            // Or for 64-bit only:
+            // abiFilters 'arm64-v8a'
+        }
     }
 
     buildTypes {
@@ -47,6 +54,19 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt') // Path to your CMakeLists.txt
+            version '3.22.1' // Or the version of CMake you have installed
+        }
+    }
+    // Add this block if you want to copy the .so files to jniLibs
+    // Although with externalNativeBuild, Gradle usually handles this.
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/cpp/build/intermediates/cmake/release/obj'] // Adjust path if needed
         }
     }
 }
