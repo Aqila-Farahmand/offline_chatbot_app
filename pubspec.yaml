@@ -21,6 +21,7 @@ dependencies:
   http: ^1.2.0 # for downloading model files
   file_picker: ^10.2.0
   path: ^1.8.3
+  ffi: 2.1.4
   firebase_core: ^3.15.1
   firebase_auth: ^5.6.2
   cloud_firestore: ^5.5.0
