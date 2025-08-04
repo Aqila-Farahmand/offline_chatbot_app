@@ -67,7 +67,7 @@ medicoai_metric = CustomConversationalGEval(
 
 def judge_response_with_llm(question, response, model=LLM_MODEL, host=LLM_URL, port=LLM_PORT):
     """
-    Uses the LLM from our cluster to judge the quality of the response to the question.
+    Uses the LLM to judge the quality of the response to the question.
     Returns a score (1-5) and a reason string.
     """
     system_prompt = (
