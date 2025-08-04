@@ -19,7 +19,7 @@ dependencies {
 android {
     namespace = "it.aqila.farahmand.medicoai"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion =  "27.0.12077973"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -43,9 +43,9 @@ android {
         ndk {
             // Specifies the ABIs that CMake should build for.
             // Should match ANDROID_ABIS in CMakeLists.txt
-            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
+            abiFilters += listOf("arm64-v8a")
             // Or for 64-bit only:
-            // abiFilters 'arm64-v8a'
+            // abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -56,17 +56,22 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    
     externalNativeBuild {
         cmake {
-            path file('src/main/cpp/CMakeLists.txt') // Path to your CMakeLists.txt
-            version '3.22.1' // Or the version of CMake you have installed
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
         }
     }
-    // Add this block if you want to copy the .so files to jniLibs
-    // Although with externalNativeBuild, Gradle usually handles this.
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/cpp/build/intermediates/cmake/release/obj'] // Adjust path if needed
+    
+    // Add packaging options to handle native libraries
+    packaging {
+        jniLibs {
+            pickFirsts += listOf(
+                "**/libllama_native.so",
+                "**/libllama.so",
+                "**/libggml.so"
+            )
         }
     }
 }

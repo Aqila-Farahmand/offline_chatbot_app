@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 class BundleUtils {
-  /// Get the path to the bundled llama-cli executable
+  /// Get the path to the bundled llama-cli executable (macOS) or native library (Android)
   static Future<String> getLlamaCli() async {
     if (Platform.isMacOS) {
       final appSupport = await getApplicationSupportDirectory();
@@ -131,9 +131,14 @@ class BundleUtils {
       }
 
       return llamaCliPath;
+    } else if (Platform.isAndroid) {
+      // For Android, we don't need a llama-cli executable path since we use native library
+      // Return a placeholder that indicates we're using native library approach
+      print('Android platform detected - using native library approach');
+      return 'native_library';
     }
 
-    throw UnsupportedError('Platform not supported');
+    throw UnsupportedError('Platform not supported: ${Platform.operatingSystem}');
   }
 
   /// Get the path to store models
@@ -159,6 +164,9 @@ class BundleUtils {
 
     return tempDir.path;
   }
+
+  /// Check if the current platform uses native library approach
+  static bool get isUsingNativeLibrary => Platform.isAndroid;
 
   /// After copying a binary/dylib, remove quarantine attribute and ad-hoc sign it.
   static Future<void> _postCopyFixes(String path) async {
