@@ -107,12 +107,7 @@ class LLMService {
         print('Generating response using Android native library...');
         
         // Format the prompt for medical context
-        final formattedPrompt =
-            '''
-System: You are a medical AI assistant. Provide accurate, helpful medical information while clearly stating that you are not a substitute for professional medical advice.
-
-User: $prompt
-Assistant:''';
+        final formattedPrompt = 'User: $prompt\nAssistant:';
 
         final response = await _androidService!.generateText(formattedPrompt);
         print('Successfully generated response using Android native library');
@@ -135,12 +130,7 @@ Assistant:''';
         print('Using temp directory: $tempDir');
 
         // Format the prompt for medical context
-        final formattedPrompt =
-            '''
-System: You are a medical AI assistant. Provide accurate, helpful medical information while clearly stating that you are not a substitute for professional medical advice.
-
-User: $prompt
-Assistant:''';
+        final formattedPrompt = 'User: $prompt\nAssistant:';
 
         // Create a temporary file for the prompt
         final promptFile = File('$tempDir/prompt.txt');
@@ -198,14 +188,33 @@ Assistant:''';
 
         // Clean up the temporary file
         await promptFile.delete();
-        print('Cleaned up prompt file');
 
-        print('Successfully generated response using macOS executable');
         return response;
       } catch (e) {
         print('Error generating response with macOS executable: $e');
         rethrow;
       }
+    }
+  }
+
+  // Test function for Android native library
+  static Future<String> testAndroidNativeLibrary() async {
+    if (!Platform.isAndroid) {
+      return "Test only available on Android";
+    }
+
+    if (!_isInitialized || _androidService == null) {
+      return "Android LLM service not initialized";
+    }
+
+    try {
+      print('Testing Android native library...');
+      final result = await _androidService!.testNativeLibrary();
+      print('Test result: $result');
+      return result;
+    } catch (e) {
+      print('Test failed: $e');
+      return "Test failed: $e";
     }
   }
 

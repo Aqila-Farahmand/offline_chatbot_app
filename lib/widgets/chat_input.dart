@@ -39,10 +39,17 @@ class _ChatInputState extends State<ChatInput> {
         border: Border(
           top: BorderSide(color: Theme.of(context).colorScheme.outline),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
           child: Row(
             children: [
               Expanded(
@@ -60,28 +67,35 @@ class _ChatInputState extends State<ChatInput> {
                         ? 'Processing...'
                         : 'Type your message...',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: 20,
+                      vertical: 12,
                     ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: context.watch<AppState>().isProcessing
-                    ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send),
-                onPressed:
-                    _isComposing && !context.watch<AppState>().isProcessing
-                    ? () => _handleSubmitted(_controller.text)
-                    : null,
+              const SizedBox(width: 10),
+              Material(
+                color: Theme.of(context).primaryColor,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: context.watch<AppState>().isProcessing
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send, color: Colors.white),
+                  onPressed:
+                      _isComposing && !context.watch<AppState>().isProcessing
+                      ? () => _handleSubmitted(_controller.text)
+                      : null,
+                ),
               ),
             ],
           ),
