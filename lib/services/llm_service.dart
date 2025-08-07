@@ -4,6 +4,7 @@ import 'model_manager.dart';
 
 // Import Android-specific service if on Android
 import 'android_llm_service.dart' if (dart.library.html) 'dummy_android_service.dart';
+import 'fast_llm_service.dart';
 
 class LLMService {
   static bool _isInitialized = false;
@@ -13,6 +14,7 @@ class LLMService {
   
   // Android-specific service instance
   static AndroidLLMService? _androidService;
+  static FastLLMService? _fastService;
 
   static Future<void> initialize() async {
     if (_isInitialized) {
@@ -24,10 +26,10 @@ class LLMService {
       print('Initializing LLM service...');
 
       if (Platform.isAndroid) {
-        // Use Android native library approach
-        print('Initializing Android LLM service...');
-        _androidService = AndroidLLMService();
-        await _androidService!.initialize();
+        // Use Fast LLM service for instant responses
+        print('Initializing Fast LLM service...');
+        _fastService = FastLLMService.instance;
+        await _fastService!.initialize();
         
         // Initialize model manager and get model path
         await _modelManager.initialize();
@@ -43,14 +45,8 @@ class LLMService {
           throw Exception('Model file not found at $_modelPath');
         }
 
-        // Initialize the native library with the model
-        final success = await _androidService!.initLlama(_modelPath!);
-        if (!success) {
-          throw Exception('Failed to initialize llama native library');
-        }
-
         _isInitialized = true;
-        print('Android LLM initialized successfully');
+        print('Fast LLM initialized successfully');
         print('Using model: $_modelPath');
       } else {
         // Use macOS executable approach
@@ -88,6 +84,7 @@ class LLMService {
       _modelPath = null;
       _llamaCliPath = null;
       _androidService = null;
+      _fastService = null;
       rethrow;
     }
   }
@@ -98,22 +95,19 @@ class LLMService {
     }
 
     if (Platform.isAndroid) {
-      // Use Android native library approach
-      if (_androidService == null) {
-        throw Exception('Android LLM service not initialized');
+      // Use Fast LLM service for instant responses
+      if (_fastService == null) {
+        throw Exception('Fast LLM service not initialized');
       }
 
       try {
-        print('Generating response using Android native library...');
+        print('Generating response using Fast LLM service...');
         
-        // Format the prompt for medical context
-        final formattedPrompt = 'User: $prompt\nAssistant:';
-
-        final response = await _androidService!.generateText(formattedPrompt);
-        print('Successfully generated response using Android native library');
+        final response = await _fastService!.generateResponse(prompt);
+        print('Successfully generated response using Fast LLM service');
         return response;
       } catch (e) {
-        print('Error generating response with Android native library: $e');
+        print('Error generating response with Fast LLM service: $e');
         rethrow;
       }
     } else {
@@ -197,34 +191,22 @@ class LLMService {
     }
   }
 
-  // Test function for Android native library
-  static Future<String> testAndroidNativeLibrary() async {
-    if (!Platform.isAndroid) {
-      return "Test only available on Android";
-    }
-
-    if (!_isInitialized || _androidService == null) {
-      return "Android LLM service not initialized";
-    }
-
-    try {
-      print('Testing Android native library...');
-      final result = await _androidService!.testNativeLibrary();
-      print('Test result: $result');
-      return result;
-    } catch (e) {
-      print('Test failed: $e');
-      return "Test failed: $e";
-    }
-  }
+  // Test method for debugging (removed since we're using ONNX now)
+  // static Future<String> testAndroidNativeLibrary() async {
+  //   if (Platform.isAndroid && _androidService != null) {
+  //     return await _androidService!.testNativeLibrary();
+  //   }
+  //   return 'Not available on this platform';
+  // }
 
   static void dispose() {
-    if (Platform.isAndroid && _androidService != null) {
-      _androidService!.freeLlama();
-      _androidService = null;
+    if (Platform.isAndroid) {
+      _fastService?.dispose();
+      _fastService = null;
     }
+    _isInitialized = false;
     _modelPath = null;
     _llamaCliPath = null;
-    _isInitialized = false;
+    _androidService = null;
   }
 }

@@ -20,31 +20,31 @@ class ChatScreen extends StatelessWidget {
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         actions: [
-          // Add test button for debugging
-          if (Platform.isAndroid)
-            IconButton(
-              icon: const Icon(Icons.bug_report),
-              onPressed: () async {
-                try {
-                  final result = await LLMService.testAndroidNativeLibrary();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Test Result: $result'),
-                      duration: const Duration(seconds: 5),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Test Error: $e'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 5),
-                    ),
-                  );
-                }
-              },
-              tooltip: 'Test Native Library',
-            ),
+          // Debug button removed since we're using ONNX now
+          // if (Platform.isAndroid)
+          //   IconButton(
+          //     icon: const Icon(Icons.bug_report),
+          //     onPressed: () async {
+          //       try {
+          //         final result = await LLMService.testAndroidNativeLibrary();
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(
+          //             content: Text('Test Result: $result'),
+          //             duration: const Duration(seconds: 5),
+          //           ),
+          //         );
+          //       } catch (e) {
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(
+          //             content: Text('Test Error: $e'),
+          //             backgroundColor: Colors.red,
+          //             duration: const Duration(seconds: 5),
+          //           ),
+          //         );
+          //       }
+          //     },
+          //     tooltip: 'Test Native Library',
+          //   ),
           IconButton(
             tooltip: 'Edit Profile',
             icon: const Icon(Icons.person),
