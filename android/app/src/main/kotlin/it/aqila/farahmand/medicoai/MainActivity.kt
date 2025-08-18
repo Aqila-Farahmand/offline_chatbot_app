@@ -27,7 +27,7 @@ class MainActivity : FlutterActivity() {
                         val options = LlmInference.LlmInferenceOptions.builder()
                             .setModelPath(modelPath)
                             .build()
-                        llm = LlmInference.createFromOptions(this, options)
+                        llm = LlmInference.createFromOptions(applicationContext, options)
                         result.success(true)
                     } catch (e: Exception) {
                         Log.e("MainActivity", "Failed to init LLM", e)
@@ -47,6 +47,27 @@ class MainActivity : FlutterActivity() {
                     } catch (e: Exception) {
                         Log.e("MainActivity", "Generation failed", e)
                         result.error("GEN_FAILED", e.message, null)
+                    }
+                }
+                "debugInitRun" -> {
+                    // Debug helper: initialize with given path and run a prompt, return the output
+                    val modelPath = call.argument<String>("modelPath")
+                    val prompt = call.argument<String>("prompt") ?: "Hello from MediaPipe"
+                    if (modelPath.isNullOrBlank()) {
+                        result.error("INVALID_ARGS", "modelPath is required", null)
+                        return@setMethodCallHandler
+                    }
+                    try {
+                        val options = LlmInference.LlmInferenceOptions.builder()
+                            .setModelPath(modelPath)
+                            .build()
+                        llm = LlmInference.createFromOptions(applicationContext, options)
+                        val out = llm!!.generateResponse(prompt)
+                        Log.i("MainActivity", "debugInitRun output: $out")
+                        result.success(out)
+                    } catch (e: Exception) {
+                        Log.e("MainActivity", "debugInitRun failed", e)
+                        result.error("DEBUG_FAILED", e.message, null)
                     }
                 }
                 "dispose" -> {

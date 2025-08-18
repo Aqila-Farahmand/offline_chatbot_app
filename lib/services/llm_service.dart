@@ -2,9 +2,6 @@ import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
 
-// Import Android-specific service if on Android
-import 'android_llm_service.dart' if (dart.library.html) 'dummy_android_service.dart';
-import 'fast_llm_service.dart';
 import 'mediapipe_android_service.dart';
 
 class LLMService {
@@ -13,9 +10,6 @@ class LLMService {
   static String? _llamaCliPath;
   static final ModelManager _modelManager = ModelManager();
   
-  // Android-specific service instance
-  static AndroidLLMService? _androidService;
-  static FastLLMService? _fastService;
   static bool _isMediaPipe = false;
 
   static Future<void> initialize() async {
@@ -49,10 +43,10 @@ class LLMService {
         } catch (_) {}
 
         if (_modelPath == null) {
-          throw Exception('No model selected');
+          throw Exception('No model selected or found');
         }
 
-        // Prefer MediaPipe on Android when a .task file is available, else fallback
+        // Require MediaPipe on Android: ensure a .task model exists
         final modelFile = File(_modelPath!);
         final isTaskModel = _modelPath!.endsWith('.task');
         if (await modelFile.exists() && isTaskModel) {
@@ -62,12 +56,7 @@ class LLMService {
           _isInitialized = true;
           print('MediaPipe LLM initialized successfully');
         } else {
-          print('MediaPipe .task model not found, using Fast LLM fallback');
-          _fastService = FastLLMService.instance;
-          await _fastService!.initialize();
-          _isMediaPipe = false;
-          _isInitialized = true;
-          print('Fast LLM initialized successfully');
+          throw Exception('MediaPipe .task model not found. Please push a .task model to /data/local/tmp/llm or add one to assets/models/.');
         }
       } else {
         // Use macOS executable approach
@@ -104,8 +93,6 @@ class LLMService {
       _isInitialized = false;
       _modelPath = null;
       _llamaCliPath = null;
-      _androidService = null;
-      _fastService = null;
       rethrow;
     }
   }
@@ -117,16 +104,11 @@ class LLMService {
 
     if (Platform.isAndroid) {
       try {
-        if (_isMediaPipe) {
-          print('Generating response using MediaPipe LLM...');
-          return await MediapipeAndroidService.generate(prompt);
+        if (!_isMediaPipe) {
+          throw Exception('MediaPipe LLM not initialized');
         }
-        if (_fastService == null) {
-          _fastService = FastLLMService.instance;
-          await _fastService!.initialize();
-        }
-        print('Generating response using Fast LLM fallback...');
-        return await _fastService!.generateResponse(prompt);
+        print('Generating response using MediaPipe LLM...');
+        return await MediapipeAndroidService.generate(prompt);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -222,8 +204,6 @@ class LLMService {
 
   static void dispose() {
     if (Platform.isAndroid) {
-      _fastService?.dispose();
-      _fastService = null;
       // Ensure MediaPipe is also disposed if used
       MediapipeAndroidService.dispose();
     }
@@ -231,6 +211,5 @@ class LLMService {
     _isMediaPipe = false;
     _modelPath = null;
     _llamaCliPath = null;
-    _androidService = null;
   }
 }
