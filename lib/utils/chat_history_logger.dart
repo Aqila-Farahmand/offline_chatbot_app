@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-
-// Removed path_provider; write directly to a folder relative to the current working directory.
+import 'package:path_provider/path_provider.dart';
 
 class ChatHistoryLogger {
   static Directory? _cachedLogDir;
@@ -10,25 +9,17 @@ class ChatHistoryLogger {
   static Future<Directory> _resolveLogDir() async {
     if (_cachedLogDir != null) return _cachedLogDir!;
 
-    final initialDir = Directory.current;
-    Directory dir = initialDir;
-
-    // Walk up directories until we find pubspec.yaml or reach root.
-    while (true) {
-      final pubspec = File(p.join(dir.path, 'pubspec.yaml'));
-      if (await pubspec.exists()) {
-        break;
-      }
-      final parent = dir.parent;
-      if (parent.path == dir.path) {
-        // Reached filesystem root; no pubspec found. Use the initial directory.
-        dir = initialDir;
-        break;
-      }
-      dir = parent;
+    Directory base;
+    try {
+      // Use app-internal documents directory for reliability (always writable)
+      // Android path: /data/user/0/<package>/app_flutter
+      base = await getApplicationDocumentsDirectory();
+    } catch (_) {
+      // Fallback to temp dir if anything goes wrong
+      base = await getTemporaryDirectory();
     }
 
-    final logDir = Directory(p.join(dir.path, 'chat_logs'));
+    final logDir = Directory(p.join(base.path, 'chat_logs'));
     if (!await logDir.exists()) {
       await logDir.create(recursive: true);
     }
