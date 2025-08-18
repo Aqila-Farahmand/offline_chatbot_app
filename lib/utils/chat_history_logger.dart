@@ -41,9 +41,9 @@ class ChatHistoryLogger {
     final file = File(filePath);
 
     if (!await file.exists()) {
-      // Create file and write header row
+      // Create file and write header row (include timestamp and prompt label)
       await file.writeAsString(
-        'model_name,question,response,response_time_ms\n',
+        'timestamp_iso,model_name,prompt_label,question,response,response_time_ms\n',
       );
     }
 
@@ -56,6 +56,8 @@ class ChatHistoryLogger {
     required String userQuestion,
     required String modelResponse,
     required int responseTimeMs,
+    String promptLabel = 'default',
+    String? timestampIso,
   }) async {
     try {
       final file = await _getLogFile();
@@ -68,10 +70,9 @@ class ChatHistoryLogger {
             .replaceAll('\r', ' ');
       }
 
+      final ts = timestampIso ?? DateTime.now().toUtc().toIso8601String();
       final csvLine =
-          '"${sanitize(modelName)}","${sanitize(userQuestion)}","${sanitize(modelResponse)}",$responseTimeMs\n'
-              .replaceFirst('userQuestion', 'question')
-              .replaceFirst('modelResponse', 'response');
+          '"${sanitize(ts)}","${sanitize(modelName)}","${sanitize(promptLabel)}","${sanitize(userQuestion)}","${sanitize(modelResponse)}",$responseTimeMs\n';
       await file.writeAsString(csvLine, mode: FileMode.append, flush: true);
     } catch (e) {
       print('ChatHistoryLogger error: $e');
