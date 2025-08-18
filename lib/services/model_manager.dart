@@ -46,11 +46,12 @@ class ModelManager extends ChangeNotifier {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
 
-      // Collect all .gguf model filenames in assets/models
+      // Collect all .gguf and .task model filenames in assets/models
       final assetModelFilenames = <String>{};
       for (final assetPath in manifestMap.keys) {
-        if (assetPath.startsWith('assets/models/') &&
-            assetPath.endsWith('.gguf')) {
+        final isModelAsset = assetPath.startsWith('assets/models/') &&
+            (assetPath.endsWith('.gguf') || assetPath.endsWith('.task'));
+        if (isModelAsset) {
           final filename = assetPath.split('/').last;
           assetModelFilenames.add(filename);
           final destPath = '$_modelsPath/$filename';
@@ -100,7 +101,7 @@ class ModelManager extends ChangeNotifier {
       final modelFiles = Directory(_modelsPath!)
           .listSync()
           .whereType<File>()
-          .where((file) => file.path.endsWith('.gguf'))
+          .where((file) => file.path.endsWith('.gguf') || file.path.endsWith('.task'))
           .toList();
 
       print('Found ${modelFiles.length} model(s)');
@@ -116,12 +117,17 @@ class ModelManager extends ChangeNotifier {
             'Model size: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB',
           );
 
+          final modelName = filename
+              .replaceAll('.gguf', '')
+              .replaceAll('.task', '');
+          final isTask = filename.endsWith('.task');
           _availableModels.add(
             LLMModel(
-              name: filename.replaceAll('.gguf', ''),
+              name: modelName,
               filename: filename,
-              description:
-                  'Local model (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)',
+              description: isTask
+                  ? 'MediaPipe task model (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)'
+                  : 'Local model (${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB)',
               contextSize: 2048,
               isDownloaded: true,
             ),
@@ -181,8 +187,9 @@ class ModelManager extends ChangeNotifier {
       }
 
       final filename = file.path.split('/').last;
-      if (!filename.endsWith('.gguf')) {
-        throw Exception('Invalid model file format. Expected .gguf file');
+      final isValid = filename.endsWith('.gguf') || filename.endsWith('.task');
+      if (!isValid) {
+        throw Exception('Invalid model file format. Expected .gguf or .task file');
       }
 
       if (_modelsPath == null) {
