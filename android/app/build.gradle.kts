@@ -38,16 +38,14 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         multiDexEnabled = true
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
         ndk {
-            // Specifies the ABIs that CMake should build for.
-            // Should match ANDROID_ABIS in CMakeLists.txt
+            // Force only 64-bit ARM to avoid armeabi-v7a builds
+            abiFilters.clear()
             abiFilters += listOf("arm64-v8a")
-            // Or for 64-bit only:
-            // abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -59,23 +57,8 @@ android {
         }
     }
     
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-    
-    // Add packaging options to handle native libraries
-    packaging {
-        jniLibs {
-            pickFirsts += listOf(
-                "**/libllama_native.so",
-                "**/libllama.so",
-                "**/libggml.so"
-            )
-        }
-    }
+    // Removed externalNativeBuild and JNI packaging since llama.cpp is no longer used on Android
+
 }
 
 flutter {

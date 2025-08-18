@@ -7,7 +7,6 @@ import io.flutter.plugin.common.MethodChannel
 // MediaPipe Tasks GenAI imports
 import android.util.Log
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
-import com.google.mediapipe.tasks.genai.llminference.LlmInferenceOptions
 
 class MainActivity : FlutterActivity() {
     private val channelName = "mediapipe_llm"
@@ -25,7 +24,7 @@ class MainActivity : FlutterActivity() {
                         return@setMethodCallHandler
                     }
                     try {
-                        val options = LlmInferenceOptions.builder()
+                        val options = LlmInference.LlmInferenceOptions.builder()
                             .setModelPath(modelPath)
                             .build()
                         llm = LlmInference.createFromOptions(this, options)
