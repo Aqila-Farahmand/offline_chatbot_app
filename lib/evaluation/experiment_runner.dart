@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:medico_ai/utils/chat_history_logger.dart';
 
 /// Describes a prompt variant to be tested in the experiment.
 /// [label] is a short identifier for the prompt (e.g., "baseline", "med_safety_v2").
@@ -116,6 +117,17 @@ Future<void> runLLMExperiment({
 
         sink.writeln(row);
 
+        // Log to chat history and print to console
+        await ChatHistoryLogger.logModelEval(
+          modelName: modelName,
+          userQuestion: question,
+          modelResponse: modelResponse,
+          responseTimeMs: responseMs,
+        );
+        print('[Experiment] [$modelName/${spec.label}] Q: $question');
+        print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
+        print('[Experiment] [$modelName/${spec.label}] took: ${responseMs}ms');
+
         if (cooldownBetweenCalls > Duration.zero) {
           await Future.delayed(cooldownBetweenCalls);
         }
@@ -177,6 +189,158 @@ String _csvEscape(String value) {
   if (!needsQuoting) return value;
   final escaped = value.replaceAll('"', '""');
   return '"$escaped"';
+}
+
+/// Run experiment from CSV content string (e.g., loaded from a bundled asset).
+/// The CSV must include a header row with a `question` column. An optional
+/// `answer` column is used as `reference_answer` in outputs.
+Future<void> runLLMExperimentFromCsvString({
+  required String csvContent,
+  required List<PromptSpec> prompts,
+  required String modelName,
+  required String outputCsvPath,
+  required Future<String> Function(String prompt) generate,
+  int maxQuestions = -1,
+  Duration cooldownBetweenCalls = Duration.zero,
+}) async {
+  // Ensure output directory exists
+  final outFile = File(outputCsvPath);
+  await outFile.parent.create(recursive: true);
+
+  // If the file is new/empty, write header
+  final needsHeader = !await outFile.exists() || (await outFile.length()) == 0;
+  final sink = outFile.openWrite(mode: FileMode.append, encoding: utf8);
+  try {
+    if (needsHeader) {
+      sink.writeln('timestamp_iso,model,prompt_label,question,reference_answer,answer,response_ms');
+    }
+
+    final allLines = const LineSplitter().convert(csvContent);
+    if (allLines.isEmpty) return;
+
+    // Detect if CSV has a header row with a 'question' column.
+    final header = _parseCsvLine(allLines.first);
+    final hasStructuredHeader = header.contains('question');
+
+    int processed = 0;
+    if (hasStructuredHeader) {
+      final questionIdx = header.indexOf('question');
+      final hasAnswerColumn = header.contains('answer');
+      final answerIdx = hasAnswerColumn ? header.indexOf('answer') : -1;
+
+      for (int lineIdx = 1; lineIdx < allLines.length; lineIdx++) {
+        final rawLine = allLines[lineIdx];
+        if (rawLine.trim().isEmpty) continue;
+
+        final fields = _parseCsvLine(rawLine);
+        if (fields.length <= questionIdx) continue;
+
+        final question = fields[questionIdx];
+        final referenceAnswer = (hasAnswerColumn && fields.length > answerIdx) ? fields[answerIdx] : '';
+
+        for (final spec in prompts) {
+          final prompt = spec.renderForQuestion(question);
+          final stopwatch = Stopwatch()..start();
+          late String modelResponse;
+          try {
+            modelResponse = await generate(prompt);
+          } finally {
+            stopwatch.stop();
+          }
+
+          final responseMs = stopwatch.elapsedMilliseconds;
+          final timestampIso = DateTime.now().toUtc().toIso8601String();
+
+          final row = [
+            timestampIso,
+            modelName,
+            spec.label,
+            question,
+            referenceAnswer,
+            modelResponse,
+            responseMs.toString(),
+          ].map(_csvEscape).join(',');
+
+          sink.writeln(row);
+
+          // Log to chat history and print to console
+          await ChatHistoryLogger.logModelEval(
+            modelName: modelName,
+            userQuestion: question,
+            modelResponse: modelResponse,
+            responseTimeMs: responseMs,
+          );
+          print('[Experiment] [$modelName/${spec.label}] Q: $question');
+          print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
+          print('[Experiment] [$modelName/${spec.label}] took: ${responseMs}ms');
+
+          if (cooldownBetweenCalls > Duration.zero) {
+            await Future.delayed(cooldownBetweenCalls);
+          }
+        }
+
+        processed += 1;
+        if (maxQuestions > 0 && processed >= maxQuestions) {
+          break;
+        }
+      }
+    } else {
+      // Treat each line as a question (headerless single-column file)
+      for (final question in allLines) {
+        final trimmed = question.trim();
+        if (trimmed.isEmpty) continue;
+
+        for (final spec in prompts) {
+          final prompt = spec.renderForQuestion(trimmed);
+          final stopwatch = Stopwatch()..start();
+          late String modelResponse;
+          try {
+            modelResponse = await generate(prompt);
+          } finally {
+            stopwatch.stop();
+          }
+
+          final responseMs = stopwatch.elapsedMilliseconds;
+          final timestampIso = DateTime.now().toUtc().toIso8601String();
+
+          final row = [
+            timestampIso,
+            modelName,
+            spec.label,
+            trimmed,
+            '',
+            modelResponse,
+            responseMs.toString(),
+          ].map(_csvEscape).join(',');
+
+          sink.writeln(row);
+
+          // Log to chat history and print to console
+          await ChatHistoryLogger.logModelEval(
+            modelName: modelName,
+            userQuestion: trimmed,
+            modelResponse: modelResponse,
+            responseTimeMs: responseMs,
+          );
+          print('[Experiment] [$modelName/${spec.label}] Q: $trimmed');
+          print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
+          print('[Experiment] [$modelName/${spec.label}] took: ${responseMs}ms');
+
+          if (cooldownBetweenCalls > Duration.zero) {
+            await Future.delayed(cooldownBetweenCalls);
+          }
+        }
+
+        processed += 1;
+        if (maxQuestions > 0 && processed >= maxQuestions) {
+          break;
+        }
+      }
+    }
+  } finally {
+    await sink.flush();
+    await sink.close();
+  }
 }
 
 /// Convenience wrapper to run the experiment using the app's LLM service.

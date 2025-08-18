@@ -35,4 +35,6 @@ flutter:
   assets:
     - assets/images/
     - assets/models/
+    # Evaluation datasets
+    - evaluation/dataset/questions.csv
   uses-material-design: true
