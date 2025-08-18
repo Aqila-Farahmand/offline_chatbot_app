@@ -6,3 +6,8 @@ link: https://huggingface.co/google/gemma-3-1b-it-qat-q4_0-gguf
 link: https://huggingface.co/Triangle104/Unsloth-Llama-3.2-3B-Instruct-Q4_K_M-GGUF
 4. TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf (668MB)
 link: https://huggingface.co/second-state/TinyLlama-1.1B-Chat-v1.0-GGUF?show_file_info=TinyLlama-1.1B-Chat-v1.0-Q4_K_M.gguf
+
+
+# Android models
+Gemma3-1b.task
+1. Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task
