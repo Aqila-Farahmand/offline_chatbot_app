@@ -16,7 +16,7 @@ class ChatScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical AI Assistant'),
+        title: const Text('MedicoAI'),
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         actions: [
