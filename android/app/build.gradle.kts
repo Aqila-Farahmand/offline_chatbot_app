@@ -15,6 +15,8 @@ dependencies {
     // When using the BoM, don't specify versions in Firebase dependencies
     // Add the dependencies for any other desired Firebase products
     // https://firebase.google.com/docs/android/setup#available-libraries
+    // MediaPipe Tasks GenAI LLM Inference API
+    implementation("com.google.mediapipe:tasks-genai:0.10.24")
 }
 android {
     namespace = "it.aqila.farahmand.medicoai"
