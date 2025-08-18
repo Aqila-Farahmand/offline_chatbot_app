@@ -3,8 +3,7 @@
 # Ignore DeepEval cache directory
 .cache/
 # Ignore DeepEval dataset directory
-dataset/
-# Ignore DeepEval logs
+
 logs/
 # Ignore DeepEval temporary files
 *.tmp
