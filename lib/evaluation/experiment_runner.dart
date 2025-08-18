@@ -123,6 +123,8 @@ Future<void> runLLMExperiment({
           userQuestion: question,
           modelResponse: modelResponse,
           responseTimeMs: responseMs,
+          promptLabel: spec.label,
+          timestampIso: timestampIso,
         );
         print('[Experiment] [$modelName/${spec.label}] Q: $question');
         print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
@@ -269,6 +271,8 @@ Future<void> runLLMExperimentFromCsvString({
             userQuestion: question,
             modelResponse: modelResponse,
             responseTimeMs: responseMs,
+            promptLabel: spec.label,
+            timestampIso: timestampIso,
           );
           print('[Experiment] [$modelName/${spec.label}] Q: $question');
           print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
@@ -321,6 +325,8 @@ Future<void> runLLMExperimentFromCsvString({
             userQuestion: trimmed,
             modelResponse: modelResponse,
             responseTimeMs: responseMs,
+            promptLabel: spec.label,
+            timestampIso: timestampIso,
           );
           print('[Experiment] [$modelName/${spec.label}] Q: $trimmed');
           print('[Experiment] [$modelName/${spec.label}] A: ${modelResponse.replaceAll('\n', ' ')}');
