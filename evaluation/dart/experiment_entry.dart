@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 
 import 'package:medico_ai/services/llm_service.dart';
-import 'experiment_runner.dart';
+import 'package:medico_ai/evaluation/experiment_runner.dart';
 
 Future<void> main() async {
   // Ensure Flutter bindings so path_provider works in this headless entry
