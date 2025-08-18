@@ -183,6 +183,16 @@ Enable debug logging by checking the console output:
 flutter run --debug
 ```
 
+### how to pull chat logs?
+
+```bash
+adb shell run-as it.aqila.farahmand.medicoai ls -lh app_flutter/chat_logs
+adb exec-out run-as it.aqila.farahmand.medicoai cat "app_flutter/chat_logs/chat_history_$(date +%F).csv" > chat_history_$(date +%F).csv
+# or copy to public Downloads, then pull:
+adb shell run-as it.aqila.farahmand.medicoai cp "app_flutter/chat_logs/chat_history_$(date +%F).csv" /sdcard/Download/
+adb pull /sdcard/Download/chat_history_$(date +%F).csv .
+```
+
 Look for these log messages:
 
 - "Android platform detected - using native library approach"
