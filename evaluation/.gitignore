@@ -16,6 +16,4 @@ __pycache__/
 # ignore env file
 .env
 .secrets
-results/
-results/*.csv
 dart/.DS_Store

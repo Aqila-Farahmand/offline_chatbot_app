@@ -10,8 +10,8 @@ Future<void> main() async {
 
   // Configure dataset and output paths
   final projectRoot = Directory.current.path;
-  final datasetCsv = '$projectRoot/evaluation/dataset/test.csv';
-  final outputCsv = '$projectRoot/evaluation/results/llm_experiment_results.csv';
+  final datasetCsv = '$projectRoot/evaluation/dataset/questions.csv';
+  final outputCsv = '$projectRoot/evaluation/results/model_name_results.csv';
 
   // Define prompt variants
   final prompts = <PromptSpec>[
