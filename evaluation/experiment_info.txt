@@ -13,7 +13,10 @@ link: https://huggingface.co/Triangle104/Unsloth-Llama-3.2-3B-Instruct-Q4_K_M-GG
 Gemma3-1b.task
 1. Gemma3-1B(689MB) : https://huggingface.co/litert-community/Gemma3-1B-IT
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
-3. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
+3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
+The apk size: 1.45GB
+4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
+this model is too large to run on A54
 
 System prompt structure:
 
@@ -36,6 +39,7 @@ I/flutter (24915): Model size: 521.34 MB
 
 Note: 
 how to adb push local models to remote?
+adb push <local_path> <remote_path>
 
 adb shell mkdir -p /data/local/tmp/llm
 adb push /Users/aqilafarahmand/Downloads/Qwen2.5-0.5B.task /data/local/tmp/llm/
