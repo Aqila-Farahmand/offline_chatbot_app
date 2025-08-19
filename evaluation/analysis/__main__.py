@@ -44,6 +44,7 @@ def generate_time_plot():
         palette=palette,
         legend=False
     )
+    plt.yscale('log')
     ax.set_title("Response Time Distribution by Model and Prompt Type", fontsize=16)
     # ax.set_xlabel("Model Name - Prompt Type")
     ax.set_ylabel("Response Time (ms)", )
