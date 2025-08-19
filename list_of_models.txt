@@ -11,6 +11,7 @@ link: https://huggingface.co/second-state/TinyLlama-1.1B-Chat-v1.0-GGUF?show_fil
 # Android models
 Gemma3-1b.task
 1. Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task
+2. qwen2.5-0.5b: https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 
 how to adb push local models to remote?
 
