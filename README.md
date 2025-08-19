@@ -9,7 +9,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 
 ## Features
 
-- **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp).
+- **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) (desktop) or MediaPipe (mobile).
 - **Multi-platform:** Android, iOS, macOS, Windows, Linux (desktop & mobile).  
   _Web builds are supported but fall back to a cloud model or placeholder because WebAssembly cannot access native binaries._
 - **Model manager** – detect, add, and switch between local `.gguf` models.
@@ -19,13 +19,22 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 
 ---
 
+## Platform Comparison
+
+| Platform | LLM Engine | Model Format | Notes                                   |
+| -------- | ---------- | ------------ | --------------------------------------- |
+| Desktop  | llama.cpp  | .gguf        | Native binaries required per OS         |
+| Mobile   | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
+
+---
+
 ## Project Structure (key folders)
 
 ```
 lib/
 ├── main.dart               # App entry-point & routing
 ├── screens/                # UI screens (chat, login)
-├── services/               # Business logic (LLMService, ModelManager, ...)
+├── services/               # LLM model handeling (LLMService, ModelManager, ...)
 ├── widgets/                # Re-usable UI components
 ├── utils/                  # Helper utilities
 └── models/ & constants/    # Data models and constants
@@ -35,22 +44,49 @@ assets/models/              # Optional pre-bundled .gguf models
 
 ---
 
-## Prerequisites
+## Desktop Implementation
 
-1. **Flutter ≥ 3.16** with the desired platform SDKs installed (`flutter doctor`).
-2. **Xcode** (latest version recommended) is required for building and running on macOS and iOS. Install from the Mac App Store and ensure you have agreed to the license by running `sudo xcodebuild -license`.
-3. **Note on Apple Development Certificates**, For local development and testing on simulators or your own connected Apple devices, a paid Apple Development Certificate is generally NOT required. Xcode allows you to sign apps with your free Apple ID. You can manage your Apple ID in Xcode under `Xcode > Settings (or Preferences) > Accounts`. A paid Apple Developer Program membership is only necessary for distributing your app via the App Store, TestFlight, or for advanced team provisioning.
+1. **llama.cpp** is used for on-device LLM inference on desktop platforms (macOS, Windows, Linux). This requires native binaries and sufficient storage/compute resources.
+2. Place your compiled `llama-cli` binary in the appropriate platform directory (e.g., `macos/Runner/Resources/llama/`).
+3. Add one or more `.gguf` models to `assets/models/` or let the app locate them at runtime.
 
-4. A **compiled `llama.cpp` binary** (`llama-cli`) for each native platform you intend to target.  
-   • macOS: provided under `macos/Runner/Resources/llama/`.  
-   • Others: drop the binary & required `.dll/.so/.dylib` files in the equivalent `.../Resources/llama/` directory.
-5. One or more **GGUF models** (e.g. `llama-2-7b.Q4_K_M.gguf`). Place them in `assets/models/` (bundled) **or** allow the app to download/locate them at runtime.
-6. `firebase_options.dart` created via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
+### Prerequisites (Desktop)
+
+- **Flutter ≥ 3.16** with platform SDKs installed (`flutter doctor`).
+- **Xcode** (latest) for macOS/iOS builds. Accept license: `sudo xcodebuild -license`.
+- **llama.cpp** binary for your OS.
+- **GGUF models** in `assets/models/`.
+
+---
+
+## Mobile Implementation
+
+1. Integrating llama.cpp directly on mobile is impractical due to storage and compute constraints. Instead, we use **MediaPipe** for efficient on-device LLM inference on Android and iOS.
+2. The LLM Inference API uses the `com.google.mediapipe:tasks-genai` library. Add this dependency to your Android app’s `build.gradle` file.
+3. Models must be in `.task` format for both Android and Web applications.
+
+### Prerequisites (Mobile)
+
+- **Flutter ≥ 3.16** with Android/iOS SDKs.
+- Add `com.google.mediapipe:tasks-genai` to your Android `build.gradle`.
+- Use `.task` model files for MediaPipe.
+
+---
+
+## Authentication
+
+To setup firebase authentication:
+
+- Generate `firebase_options.dart` via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
+
+---
 
 ## Connectivity Notes
 
 - **First-time login (or re-login after a token expiry / manual sign-out) requires an active internet connection** so that Firebase Authentication can verify user credentials.
 - Ensure you have **deployed your Firebase project (Authentication + Firestore/Database rules)** before distributing the app. Credentials are fetched once, after which **all chat generation happens completely offline** — no prompts or model weights leave the device.
+
+---
 
 ## Running the App (Development)
 
@@ -109,7 +145,7 @@ flutter run -d macos
 Android Emulator/Device:
 
 ```Bash
-flutter run -d sdk gphone64 arm64 # (or your specific Android emulator/device ID)
+flutter run -d "your deviceId" # (or your specific Android emulator/device ID)
 ```
 
 iOS Simulator/Device:
