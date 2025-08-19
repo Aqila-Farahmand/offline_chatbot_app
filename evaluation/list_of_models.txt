@@ -15,8 +15,26 @@ Gemma3-1b.task
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 3. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 
+System prompt structure:
+
+      label: 'baseline',
+      template: 'You are a helpful assistant. Answer concisely.\n\nQuestion
+   
+      label: 'medical_safety',
+      template:
+          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice.
+
+The test data used for this experiment: evaluation/dataset/questions
+and the results for different models are store : evaluation/results
+
+
+
+Note: 
 how to adb push local models to remote?
 
 adb shell mkdir -p /data/local/tmp/llm
-adb push /Users/aqilafarahmand/Downloads/Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task /data/local/tmp/llm/
+adb push /Users/aqilafarahmand/Downloads/Qwen2.5-0.5B.task /data/local/tmp/llm/
+adb shell ls -lh /data/local/tmp/llm
+
+adb push /Users/aqilafarahmand/Downloads/Gemma3-1B.task /data/local/tmp/llm/
 adb shell ls -lh /data/local/tmp/llm
