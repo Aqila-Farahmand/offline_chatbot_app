@@ -14,7 +14,9 @@ Gemma3-1b.task
 1. Gemma3-1B(689MB) : https://huggingface.co/litert-community/Gemma3-1B-IT
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
-The apk size: 1.45GB
+APK size : 1.14GB
+
+Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 this model is too large to run on A54
 
