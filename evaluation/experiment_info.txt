@@ -27,6 +27,11 @@ System prompt structure:
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
 
+Processing model: Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task
+I/flutter (24915): Model size: 657.37 MB
+I/flutter (24915): Processing model: Qwen2.5-0.5B.task
+I/flutter (24915): Model size: 521.34 MB
+
 
 
 Note: 
