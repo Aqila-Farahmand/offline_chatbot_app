@@ -113,7 +113,8 @@ class LLMService {
           throw Exception('MediaPipe LLM not initialized');
         }
         print('Generating response using MediaPipe LLM...');
-        return await MediapipeAndroidService.generate(chatFormattedPrompt);
+        final raw = await MediapipeAndroidService.generate(chatFormattedPrompt);
+        return _cleanResponse(raw);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -153,7 +154,7 @@ class LLMService {
             '-f',
             promptFile.path,
             '--temp',
-            '0.7',
+            '0.6',
             '--top_p',
             '0.9',
             '--threads',
@@ -177,16 +178,10 @@ class LLMService {
 
         // Wrap result in Shell-like Output
         final responseText = result.stdout.toString();
-        final rawResponse = responseText.split('Assistant:').last.trim();
-        // Remove any leading '<|assistant|>', 'Assistant', 'Assistant:', 'Assistant <...>', 'model', 'model:', 'model <...>', or similar (case-insensitive, repeated)
-        String response = rawResponse;
-        final prefixPattern = RegExp(
-          r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
-          caseSensitive: false,
-        );
-        while (prefixPattern.hasMatch(response)) {
-          response = response.replaceFirst(prefixPattern, '').trim();
-        }
+        final rawSection = responseText.contains('Assistant:')
+            ? responseText.split('Assistant:').last
+            : responseText;
+        final response = _cleanResponse(rawSection);
 
         // Clean up the temporary file
         await promptFile.delete();
@@ -197,6 +192,28 @@ class LLMService {
         rethrow;
       }
     }
+  }
+
+  static String _cleanResponse(String text) {
+    String response = text.trim();
+
+    // Remove common assistant prefixes repeatedly
+    final prefixPattern = RegExp(
+      r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
+      caseSensitive: false,
+    );
+    while (prefixPattern.hasMatch(response)) {
+      response = response.replaceFirst(prefixPattern, '').trim();
+    }
+
+    // If wrapped in a single triple-backtick code fence, unwrap it
+    final fencePattern = RegExp(r'^```[a-zA-Z0-9]*\s*\n?([\s\S]*?)\n?```$', multiLine: false);
+    final fenceMatch = fencePattern.firstMatch(response);
+    if (fenceMatch != null) {
+      response = (fenceMatch.group(1) ?? '').trim();
+    }
+
+    return response.trim();
   }
 
   // Test method for debugging (removed since we're using ONNX now)
