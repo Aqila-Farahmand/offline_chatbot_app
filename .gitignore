@@ -1,5 +1,4 @@
 evaluation/analysis/*.png
-evaluation/analysis/*.pdf
 
 # Miscellaneous
 *.class

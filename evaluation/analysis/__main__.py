@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from evaluation.results import PATH as RESULTS_PATH
-from evaluation.analysis import PATH as ANALYSIS_PATH
+from evaluation.analysis import PATH as ANALYSIS_PATH, count_tokens
 
 
 def generate_time_plot():
@@ -48,6 +48,7 @@ def generate_time_plot():
     ax.set_title("Response Time Distribution by Model and Prompt Type", fontsize=16)
     # ax.set_xlabel("Model Name - Prompt Type")
     ax.set_ylabel("Response Time (ms)", )
+    ax.set_xlabel("")
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
     plt.savefig(ANALYSIS_PATH / "response_time_distribution.png")
@@ -55,6 +56,55 @@ def generate_time_plot():
     plt.close()
 
 
+def generate_token_length_answer_plot():
+    # For all csv file in RESULTS_PATH, collect the token length of the answer grouped by model name and prompt type
+    # Columns are:
+    # - time_stamp -> ignore (optional)
+    # - model_name -> group by this
+    # - prompt_type -> group by this
+    # - question -> ignore
+    # - answer -> collect this
+    # - response_ms -> ignore
+    # Generate boxplot for each model name and prompt type in one single figure
+
+    results = []
+    for csv_file in RESULTS_PATH.glob("*.csv"):
+        df = pd.read_csv(csv_file)
+        if "answer" not in df.columns:
+            continue
+        df["token_length"] = df.apply(lambda row: count_tokens(row["answer"], row["model_name"]),axis=1)
+        results.append(df[["model_name", "prompt_type", "token_length"]])
+
+    if not results:
+        print("No results found.")
+        return
+
+    combined_df = pd.concat(results, ignore_index=True)
+
+    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_type"]
+
+    palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
+
+    plt.figure(figsize=(14, 8))
+    ax = sns.violinplot(
+        data=combined_df,
+        x="combination",
+        y="token_length",
+        hue="combination",
+        palette=palette,
+        legend=False,
+        cut=0
+    )
+    ax.set_title("Token Length Distribution by Model and Prompt Type", fontsize=16)
+    ax.set_ylabel("Token Length")
+    ax.set_xlabel("")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(ANALYSIS_PATH / "token_length_distribution.png")
+    plt.savefig(ANALYSIS_PATH / "token_length_distribution.pdf")
+    plt.close()
+
 
 if __name__ == '__main__':
     fire.Fire(generate_time_plot)
+    fire.Fire(generate_token_length_answer_plot)
