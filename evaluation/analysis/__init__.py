@@ -12,11 +12,6 @@ ORIGINAL_HUGGINGFACE_NAME = {
     'Qwen2.5-0.5B': 'Qwen/Qwen2.5-0.5B-Instruct',
     'hammer2p1_05b': 'MadeAgents/Hammer2.1-0.5b',
 }
-ADDITIONAL_PARAMETERS = {
-    'gemma3-1b': {
-        'model_type': 'gemma3',
-    },
-}
 
 
 def get_tokenizer(model_name: str):
@@ -28,7 +23,6 @@ def get_tokenizer(model_name: str):
         if HUGGINGFACE_TOKEN:
             try:
                 kwargs["token"] = HUGGINGFACE_TOKEN
-                kwargs["config"] = ADDITIONAL_PARAMETERS.get(model_name, {})
                 tokenizer = AutoTokenizer.from_pretrained(repo, **kwargs)
                 TOKENIZER_CACHE[model_name] = tokenizer
                 return tokenizer
