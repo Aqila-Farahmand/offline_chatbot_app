@@ -98,14 +98,35 @@ class LLMService {
     }
   }
 
-  static Future<String> generateResponse(String prompt) async {
+  static Future<String> generateResponse(String prompt, {List<Map<String, String>>? history}) async {
     if (!_isInitialized) {
       throw Exception('LLM not initialized. Please initialize first.');
     }
 
     // Prepend the MedicoAI safety system prompt for all platforms
-    // Align with proven simple QA-style prompting that worked well in experiments
-    final combinedPrompt = 'System: ' + kMedicoAISystemPrompt + '\n\nQuestion: ' + prompt + '\nAnswer:';
+    // Unified conversation format across all platforms: User/Assistant
+    const String userLabel = 'User';
+    const String assistantLabel = 'Assistant';
+
+    final buffer = StringBuffer();
+    // Include system guidance
+    buffer.writeln(kMedicoAISystemPrompt.trim());
+    buffer.writeln('Respond in plain text. Do not use JSON, code blocks, or tool calls.');
+    if (history != null && history.isNotEmpty) {
+      for (final turn in history) {
+        final type = turn['type'];
+        final msg = (turn['message'] ?? '').trim();
+        if (msg.isEmpty) continue;
+        if (type == 'user') {
+          buffer.writeln('$userLabel: ' + msg);
+        } else if (type == 'bot') {
+          buffer.writeln('$assistantLabel: ' + msg);
+        }
+      }
+    }
+    buffer.writeln('$userLabel: ' + prompt);
+    buffer.write('$assistantLabel:');
+    final combinedPrompt = buffer.toString();
     final chatFormattedPrompt = combinedPrompt;
 
     if (Platform.isAndroid) {
@@ -115,7 +136,10 @@ class LLMService {
         }
         print('Generating response using MediaPipe LLM...');
         final raw = await MediapipeAndroidService.generate(chatFormattedPrompt);
-        return _cleanResponse(raw);
+        final section = raw.contains(assistantLabel + ':')
+            ? raw.split(assistantLabel + ':').last
+            : raw;
+        return _cleanResponse(section);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -155,7 +179,7 @@ class LLMService {
             '-f',
             promptFile.path,
             '--temp',
-            '0.6',
+            '0.65',
             '--top_p',
             '0.9',
             '--threads',
@@ -164,6 +188,15 @@ class LLMService {
             '2048',
             '-n',
             '512',
+            // Stop when the model tries to switch roles or emits common end tokens
+            '-r',
+            'User:',
+            '-r',
+            'Assistant:',
+            '-r',
+            'EOF',
+            '-r',
+            'EOF by user',
           ],
           environment: {
             'DYLD_LIBRARY_PATH':
@@ -179,8 +212,8 @@ class LLMService {
 
         // Wrap result in Shell-like Output
         final responseText = result.stdout.toString();
-        final rawSection = responseText.contains('Answer:')
-            ? responseText.split('Answer:').last
+        final rawSection = responseText.contains(assistantLabel + ':')
+            ? responseText.split(assistantLabel + ':').last
             : responseText;
         final response = _cleanResponse(rawSection);
 
@@ -196,7 +229,8 @@ class LLMService {
   }
 
   static String _cleanResponse(String text) {
-    String response = text.trim();
+    final original = text.trim();
+    String response = original;
 
     // Remove common assistant prefixes repeatedly
     final prefixPattern = RegExp(
@@ -207,14 +241,44 @@ class LLMService {
       response = response.replaceFirst(prefixPattern, '').trim();
     }
 
-    // If wrapped in a single triple-backtick code fence, unwrap it
-    final fencePattern = RegExp(r'^```[a-zA-Z0-9]*\s*\n?([\s\S]*?)\n?```$', multiLine: false);
-    final fenceMatch = fencePattern.firstMatch(response);
-    if (fenceMatch != null) {
-      response = (fenceMatch.group(1) ?? '').trim();
+    // Remove all code fences and markdown headings inline
+    response = response.replaceAll(RegExp(r'```[\s\S]*?```', multiLine: true), '');
+    response = response.replaceAll(RegExp(r'^\s*#+\s*', multiLine: true), '');
+
+    // Remove tool/JSON artifacts
+    if (RegExp(r'^\s*\[\s*\{').hasMatch(response)) {
+      // If starts with JSON array/object, drop it and keep nothing
+      response = '';
     }
 
-    return response.trim();
+    // Remove known placeholders
+    response = response.replaceAll('[bullet list]', '').replaceAll('General non-diagnostic information.', '');
+
+    // Truncate at trailing role switches or EOF markers
+    final stopMarkers = <String>['\nUser:', '\nAssistant:', 'User:', 'Assistant:', 'EOF by user', 'EOF', '<eos>', '</s>'];
+    int cut = response.length;
+    for (final m in stopMarkers) {
+      final i = response.indexOf(m);
+      if (i != -1 && i < cut) cut = i;
+    }
+    response = response.substring(0, cut);
+
+    // Strip blockquote markers ('>') at line starts
+    response = response
+        .split('\n')
+        .map((line) => line.replaceFirst(RegExp(r'^\s*>\s*'), ''))
+        .join('\n');
+
+    response = response.trim();
+
+    // Fallback: if cleaning resulted in empty output, return original
+    if (response.isEmpty) {
+      response = original;
+    }
+    if (response.isEmpty) {
+      response = 'I could not generate a response. Could you clarify your question?';
+    }
+    return response;
   }
 
   // Test method for debugging (removed since we're using ONNX now)

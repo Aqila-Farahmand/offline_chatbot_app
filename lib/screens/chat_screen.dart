@@ -129,9 +129,15 @@ class ChatScreen extends StatelessWidget {
 
                 if (appState.chatHistory.isEmpty) {
                   return const Center(
-                    child: Text(
-                      'Start a conversation by typing a message below.',
-                      style: TextStyle(fontSize: 16),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        'Type a message to start',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 16),
+                      ),
                     ),
                   );
                 }

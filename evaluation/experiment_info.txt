@@ -20,14 +20,15 @@ Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 this model is too large to run on A54
 
-System prompt structure:
+System prompt structure (Unified: User/Assistant):
 
-      label: 'baseline',
-      template: 'You are a helpful assistant. Answer concisely.\n\nQuestion
-   
-      label: 'medical_safety',
-      template:
-          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice.
+  The app and experiments both use conversation turns formatted as:
+
+    User: <message>
+    Assistant: <response>
+
+  The system guidance is prepended once by the app service. Experiments now pass the raw question only
+  and rely on the same service to construct the full prompt with history.
 
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
