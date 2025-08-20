@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/widgets.dart';
 
 import 'package:medico_ai/services/llm_service.dart';
+import 'package:medico_ai/services/model_manager.dart';
+import 'package:medico_ai/constants/prompts.dart';
 import 'package:medico_ai/evaluation/experiment_runner.dart';
 
 Future<void> main() async {
@@ -13,30 +15,30 @@ Future<void> main() async {
   final datasetCsv = '$projectRoot/evaluation/dataset/questions.csv';
   final outputCsv = '$projectRoot/evaluation/results/model_name_results.csv';
 
-  // Define prompt variants
+  // Use the app's default system prompt via LLMService; only pass the raw question here
   final prompts = <PromptSpec>[
     const PromptSpec(
-      label: 'baseline',
-      template: 'You are a helpful assistant. Answer concisely.\n\nQuestion: {question}\nAnswer:',
-    ),
-    const PromptSpec(
-      label: 'medical_safety',
-      template:
-          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice.\n\nQuestion: {question}\nAnswer:',
+      label: kMedicoAIPromptLabel,
+      template: '{question}',
     ),
   ];
 
-  await runExperimentWithLLMService(
-    datasetCsvPath: datasetCsv,
-    prompts: prompts,
-    modelName: 'selected_model', // This is just a label written to CSV
-    outputCsvPath: outputCsv,
-    maxQuestions: -1,
-    cooldownBetweenCalls: const Duration(milliseconds: 250),
-    initialize: () async => LLMService.initialize(),
-    dispose: () async => LLMService.dispose(),
-    generate: (prompt) => LLMService.generateResponse(prompt),
-  );
+  // Initialize once, then derive actual selected model name
+  await LLMService.initialize();
+  final selectedName = ModelManager().selectedModel?.name ?? ModelManager().selectedModel?.filename ?? 'unknown';
+  try {
+    await runLLMExperiment(
+      datasetCsvPath: datasetCsv,
+      prompts: prompts,
+      modelName: selectedName,
+      outputCsvPath: outputCsv,
+      generate: (prompt) => LLMService.generateResponse(prompt),
+      maxQuestions: -1,
+      cooldownBetweenCalls: const Duration(milliseconds: 250),
+    );
+  } finally {
+    await LLMService.dispose();
+  }
 }
 
 

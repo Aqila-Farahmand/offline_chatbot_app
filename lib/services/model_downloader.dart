@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
+import '../utils/bundle_utils.dart';
 
 class ModelDownloader {
   static const Map<String, ModelInfo> availableModels = {
@@ -22,6 +22,46 @@ class ModelDownloader {
       description: 'Larger model with better accuracy',
       contextSize: 8192,
     ),
+    // Sub-1GB GGUF suggestions
+    'tinyllama-1_1b-chat-q4': ModelInfo(
+      name: 'TinyLlama 1.1B Chat (Q4_K_M)',
+      filename: 'tinyllama-1.1b-chat.Q4_K_M.gguf',
+      size: 700000000, // ~0.7GB
+      url:
+          'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat.Q4_K_M.gguf',
+      description: 'Very small chat model, good for speed and low memory',
+      contextSize: 4096,
+    ),
+    'qwen2-0_5b-instruct-q4': ModelInfo(
+      name: 'Qwen2 0.5B Instruct (Q4_K_M)',
+      filename: 'qwen2-0_5b-instruct.Q4_K_M.gguf',
+      size: 600000000, // ~0.6GB
+      url:
+          'https://huggingface.co/TheBloke/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct.Q4_K_M.gguf',
+      description: 'Compact instruction-tuned model under 1GB',
+      contextSize: 4096,
+    ),
+    // Android MediaPipe .task examples (text generation). Ensure these are .task files.
+    // These entries are intended for Android use with MediaPipe; they will also download on other platforms
+    // but only Android uses .task in the current pipeline.
+    'android-gemma-2b-task': ModelInfo(
+      name: 'Android: Gemma 2B (task)',
+      filename: 'gemma-2b-it-int4.task',
+      size: 1200000000, // ~1.2GB (approx; actual may vary)
+      url:
+          'https://storage.googleapis.com/mediapipe-tasks/text/gemma2b_it_int4.task',
+      description: 'MediaPipe .task optimized for Android (INT4)',
+      contextSize: 2048,
+    ),
+    'android-qwen-0_5b-task': ModelInfo(
+      name: 'Android: Qwen 0.5B (task)',
+      filename: 'qwen-0_5b-it-int4.task',
+      size: 600000000, // ~0.6GB (approx)
+      url:
+          'https://storage.googleapis.com/mediapipe-tasks/text/qwen0_5b_it_int4.task',
+      description: 'MediaPipe .task smaller model for Android',
+      contextSize: 2048,
+    ),
   };
 
   static Future<void> downloadModel({
@@ -37,8 +77,8 @@ class ModelDownloader {
         return;
       }
 
-      final appDir = await getApplicationDocumentsDirectory();
-      final modelsDir = Directory('${appDir.path}/models');
+      final modelsDirPath = await BundleUtils.getModelsDirectory();
+      final modelsDir = Directory(modelsDirPath);
       if (!await modelsDir.exists()) {
         await modelsDir.create(recursive: true);
       }
