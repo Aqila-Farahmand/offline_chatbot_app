@@ -104,8 +104,9 @@ class LLMService {
     }
 
     // Prepend the MedicoAI safety system prompt for all platforms
-    final combinedPrompt = 'System: ' + kMedicoAISystemPrompt + '\n\nUser: ' + prompt;
-    final chatFormattedPrompt = combinedPrompt + '\nAssistant:';
+    // Align with proven simple QA-style prompting that worked well in experiments
+    final combinedPrompt = 'System: ' + kMedicoAISystemPrompt + '\n\nQuestion: ' + prompt + '\nAnswer:';
+    final chatFormattedPrompt = combinedPrompt;
 
     if (Platform.isAndroid) {
       try {
@@ -178,8 +179,8 @@ class LLMService {
 
         // Wrap result in Shell-like Output
         final responseText = result.stdout.toString();
-        final rawSection = responseText.contains('Assistant:')
-            ? responseText.split('Assistant:').last
+        final rawSection = responseText.contains('Answer:')
+            ? responseText.split('Answer:').last
             : responseText;
         final response = _cleanResponse(rawSection);
 

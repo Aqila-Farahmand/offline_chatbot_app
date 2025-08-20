@@ -47,6 +47,7 @@ class _ModelSelectorState extends State<ModelSelector> {
                       ),
                     ),
                   ),
+                ),
                 for (final entry in ModelDownloader.availableModels.entries.where((e) => e.value.filename.endsWith('.gguf')))
                   _DownloadTile(
                     modelId: entry.key,
@@ -74,6 +75,7 @@ class _ModelSelectorState extends State<ModelSelector> {
                       ),
                     ),
                   ),
+                ),
                 for (final entry in ModelDownloader.availableModels.entries.where((e) => e.value.filename.endsWith('.task')))
                   _DownloadTile(
                     modelId: entry.key,
