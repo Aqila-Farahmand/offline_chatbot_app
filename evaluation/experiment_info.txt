@@ -47,8 +47,8 @@ adb shell mkdir -p /data/local/tmp/llm
 adb push /Users/aqilafarahmand/Downloads/Qwen2.5-0.5B.task /data/local/tmp/llm/
 adb shell ls -lh /data/local/tmp/llm
 
-adb push /Users/aqilafarahmand/Downloads/Gemma3-1B.task /data/local/tmp/llm/
-adb shell ls -lh /data/local/tmp/llm
+to remove:
+adb shell rm -rf /data/local/tmp/llm/hammer2p1_0.5b.task
 
 
 ### how to pull chat logs?

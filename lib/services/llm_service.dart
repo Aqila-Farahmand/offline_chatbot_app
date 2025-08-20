@@ -1,6 +1,7 @@
 import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
+import '../constants/prompts.dart';
 
 import 'mediapipe_android_service.dart';
 
@@ -102,13 +103,17 @@ class LLMService {
       throw Exception('LLM not initialized. Please initialize first.');
     }
 
+    // Prepend the MedicoAI safety system prompt for all platforms
+    final combinedPrompt = 'System: ' + kMedicoAISystemPrompt + '\n\nUser: ' + prompt;
+    final chatFormattedPrompt = combinedPrompt + '\nAssistant:';
+
     if (Platform.isAndroid) {
       try {
         if (!_isMediaPipe) {
           throw Exception('MediaPipe LLM not initialized');
         }
         print('Generating response using MediaPipe LLM...');
-        return await MediapipeAndroidService.generate(prompt);
+        return await MediapipeAndroidService.generate(chatFormattedPrompt);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -126,8 +131,8 @@ class LLMService {
         final tempDir = await BundleUtils.getTempDirectory();
         print('Using temp directory: $tempDir');
 
-        // Format the prompt for medical context
-        final formattedPrompt = 'User: $prompt\nAssistant:';
+        // Format the prompt with system instruction for medical context
+        final formattedPrompt = chatFormattedPrompt;
 
         // Create a temporary file for the prompt
         final promptFile = File('$tempDir/prompt.txt');
