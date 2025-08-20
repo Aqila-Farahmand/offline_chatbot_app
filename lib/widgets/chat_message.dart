@@ -24,7 +24,7 @@ class ChatMessage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isUser
                     ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.surfaceContainerHigh,
+                    : Theme.of(context).colorScheme.surfaceVariant,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: isUser
@@ -38,7 +38,28 @@ class ChatMessage extends StatelessWidget {
                       data: message,
                       styleSheet: MarkdownStyleSheet(
                         p: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurface,
+                          height: 1.35,
+                        ),
+                        listBullet: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        code: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          backgroundColor: Colors.transparent,
+                          fontFamily: 'monospace',
+                        ),
+                        codeblockDecoration: const BoxDecoration(
+                          color: Colors.transparent,
+                        ),
+                        blockquoteDecoration: BoxDecoration(
+                          color: Colors.transparent,
+                          border: Border(
+                            left: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                              width: 3,
+                            ),
+                          ),
                         ),
                       ),
                     ),

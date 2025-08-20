@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'llm_service.dart';
+import '../constants/prompts.dart';
 import 'model_manager.dart';
 import '../utils/chat_history_logger.dart';
 
@@ -84,6 +85,7 @@ class AppState extends ChangeNotifier {
         userQuestion: message,
         modelResponse: response,
         responseTimeMs: responseTimeMs,
+        promptLabel: kMedicoAIPromptLabel,
       );
 
       // Add bot response to chat
