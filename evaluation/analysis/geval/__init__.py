@@ -1,39 +1,39 @@
 from pathlib import Path
 import os
 import requests
-import time
-from typing import Dict, Any
+import google.generativeai as genai
 
 
 PATH = Path(__file__).parent
-GEMINI_API_URL = "https://api.openai.com/v1/responses"
 DEFAULT_GEMINI_MODEL = "gemini-1.5-pro"
+MODEL = genai.GenerativeModel(DEFAULT_GEMINI_MODEL)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEVAL_DIMENSIONS = ["soundness", "understandability", "actionability", "concision", "transparency"]
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 
-def _call_gemini(prompt_text: str, api_key: str, model: str = DEFAULT_GEMINI_MODEL, timeout: int = 30) -> list[int]:
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": model,
-        "input": prompt_text,
+def test():
+    response = MODEL.generate_content(
+        "What is the capital of France?"
+    )
+    print("Response:", response.text)
+
+
+def _call_gemini(prompt_text: str) -> list[int]:
+    generation_config = {
         "temperature": 0.0,
-        "max_output_tokens": 20
+        "max_output_tokens": 20,
     }
-    resp = requests.post(GEMINI_API_URL, headers=headers, json=payload, timeout=timeout)
-    resp.raise_for_status()
-    # Assume the response is a text of 5 integers separated by commas
-    response_data = resp.json()
-    if "choices" not in response_data or not response_data["choices"]:
-        raise ValueError("Invalid response from Gemini API.")
-    answer_text = response_data["choices"][0]["text"]
-    try:
-        return [int(x.strip()) for x in answer_text.split(",")]
-    except ValueError:
-        raise ValueError("Response from Gemini API is not in the expected format of 5 integers.")
-
+    resp = MODEL.generate_content(
+        prompt_text,
+    ).text
+    if not resp:
+        raise ValueError("No response from Gemini API.")
+    scores = [int(x.strip()) for x in resp.split(",")]
+    if len(scores) != len(GEVAL_DIMENSIONS):
+        raise ValueError(f"Expected {len(GEVAL_DIMENSIONS)} scores, got {len(scores)}.")
+    return scores
 
 def generate_instructions(question: str, answer: str) -> str:
     """
@@ -54,25 +54,25 @@ def generate_instructions(question: str, answer: str) -> str:
     return instructions
 
 
-def compute_geval_score(answers: list, references: list) -> list[list[int]]:
+def compute_geval_score(answers: list, questions: list) -> list[list[int]]:
     """
-    Compute the G-Eval score between answers and references.
+    Compute the G-Eval score between answers and questions.
 
     :param answers: List of generated answers.
-    :param references: List of reference answers.
+    :param questions: List of reference questions.
     :return: G-Eval score as a float.
     """
-    if len(answers) != len(references):
-        raise ValueError("Answers and references must have the same length.")
+    if len(answers) != len(questions):
+        raise ValueError("Answers and questions must have the same length.")
 
     if GEMINI_API_KEY is None:
         raise ValueError("GEMINI_API_KEY environment variable is not set.")
 
     scores = []
-    for answer, reference in zip(answers, references):
+    for answer, reference in zip(answers, questions):
         prompt_text = generate_instructions(reference, answer)
         try:
-            score = _call_gemini(prompt_text, GEMINI_API_KEY)
+            score = _call_gemini(prompt_text)
             scores.append(score)
         except requests.RequestException as e:
             raise RuntimeError(f"Error calling Gemini API: {e}")
@@ -84,14 +84,14 @@ def compute_geval_score(answers: list, references: list) -> list[list[int]]:
 
 def generate_geval_file(
     answers: list[str],
-    references: list[str],
+    questions: list[str],
     output_file: str
 ) -> None:
     """
     Generate a G-Eval score file.
 
     :param answers: List of generated answers.
-    :param references: List of reference answers.
+    :param questions: List of reference questions.
     :param output_file: Path to the output file.
     """
 
@@ -100,9 +100,10 @@ def generate_geval_file(
         print(f"{output_file} already exists. Skipping generation.")
         return
 
-    scores = compute_geval_score(answers, references)
+    scores = compute_geval_score(answers, questions)
 
     with open(output_file, "w") as file:
+        file.write(",".join(GEVAL_DIMENSIONS) + "\n")
         for score in scores:
             file.write(",".join(map(str, score)) + "\n")
 

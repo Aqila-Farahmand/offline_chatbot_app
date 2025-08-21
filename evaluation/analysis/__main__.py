@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from evaluation.analysis.geval import generate_geval_file
+from evaluation.analysis.geval import generate_geval_file, GEVAL_DIMENSIONS, PATH as GEVAL_PATH
 from evaluation.results import PATH as RESULTS_PATH
 from evaluation.analysis import PATH as ANALYSIS_PATH, count_tokens
 
@@ -107,7 +107,7 @@ def generate_token_length_answer_plot():
     plt.close()
 
 
-def generate_geval_score_plot():
+def generate_geval_score_plot(dimension: str):
     # For all csv file in RESULTS_PATH, collect the G-Eval score grouped by model name and prompt type
     # Columns are:
     # - time_stamp -> ignore (optional)
@@ -135,23 +135,45 @@ def generate_geval_score_plot():
             if key not in results:
                 results[key] = []
             # Generate G-Eval scores for the current combination
-            generate_geval_file(df, model_name, prompt_type)
-            score_file = RESULTS_PATH / f"{model_name}_{prompt_type}_geval_scores.csv"
+            score_file = GEVAL_PATH / f"{model_name}_{prompt_type}_geval_scores.csv"
+            filtered_df = df[(df["model_name"] == model_name) & (df["prompt_type"] == prompt_type)]
+            generate_geval_file(filtered_df["answer"].values, filtered_df["question"].values, score_file)
             if score_file.exists():
                 score_df = pd.read_csv(score_file)
-                if "geval_score" in score_df.columns:
-                    results[key].extend(score_df["geval_score"].tolist())
+                if dimension in score_df.columns:
+                    results[key].extend(score_df[dimension].tolist())
     if not results:
-        print("No G-Eval scores found.")
+        print(f"No G-Eval scores found for {dimension} dimension.")
         return
 
-
-
-
-
-
+    combined_df = pd.DataFrame([
+        {"combination": key, "geval_score": score}
+        for key, scores in results.items()
+        for score in scores
+    ])
+    combined_df["model_name"], combined_df["prompt_type"] = zip(*combined_df["combination"].str.split(" - "))
+    palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
+    plt.figure(figsize=(14, 8))
+    ax = sns.violinplot(
+        data=combined_df,
+        x="combination",
+        y="geval_score",
+        hue="combination",
+        palette=palette,
+        legend=False,
+        cut=0
+    )
+    ax.set_title(f"G-Eval Score Distribution by Model and Prompt Type ({dimension})", fontsize=16)
+    ax.set_ylabel(f"G-Eval Score ({dimension})")
+    ax.set_xlabel("")
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+    plt.savefig(ANALYSIS_PATH / f"geval_score_distribution_{dimension}.png")
+    plt.savefig(ANALYSIS_PATH / f"geval_score_distribution_{dimension}.pdf")
 
 
 if __name__ == '__main__':
     fire.Fire(generate_time_plot)
     fire.Fire(generate_token_length_answer_plot)
+    for dimension in GEVAL_DIMENSIONS:
+        fire.Fire(lambda dim=dimension: generate_geval_score_plot(dim))
