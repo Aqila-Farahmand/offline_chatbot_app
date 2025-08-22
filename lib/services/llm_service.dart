@@ -194,14 +194,6 @@ class LLMService {
     }
   }
 
-  // Test method for debugging (removed since we're using ONNX now)
-  // static Future<String> testAndroidNativeLibrary() async {
-  //   if (Platform.isAndroid && _androidService != null) {
-  //     return await _androidService!.testNativeLibrary();
-  //   }
-  //   return 'Not available on this platform';
-  // }
-
   static void dispose() {
     if (Platform.isAndroid) {
       // Ensure MediaPipe is also disposed if used

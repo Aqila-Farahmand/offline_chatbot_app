@@ -72,7 +72,6 @@ class SettingsScreen extends StatelessWidget {
                       await runLLMExperimentFromCsvString(
                         csvContent: csvContent,
                         prompts: prompts,
-                        modelName: 'selected_model',
                         outputCsvPath: outputCsv,
                         generate: (p) => LLMService.generateResponse(p),
                         cooldownBetweenCalls: const Duration(milliseconds: 200),
