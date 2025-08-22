@@ -20,6 +20,8 @@ Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 this model is too large to run on A54
 
+Note: We have found that models less than equals to 1B parameters are fast in response time however it comes with cost of performance, i.e start to hallucinate and not very reliable for medical information.
+
 System prompt structure:
 
       label: 'baseline',
