@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:medico_ai/utils/chat_history_logger.dart';
+import 'package:medico_ai/services/model_manager.dart';
 
 /// Describes a prompt variant to be tested in the experiment.
 /// [label] is a short identifier for the prompt (e.g., "baseline", "med_safety").
@@ -27,7 +28,7 @@ class PromptSpec {
 ///   rendered prompt (template with `{question}` substituted), measure response
 ///   latency, and write rows to [outputCsvPath] with headers:
 ///   `time_stamp,model_name,prompt_type,question,answer,response_ms`.
-/// - [modelName] is recorded for every row to identify the model used.
+/// - The model name is fetched automatically from ModelManager's selected model.
 /// - If [maxQuestions] > 0, only the first N questions will be used.
 /// - [cooldownBetweenCalls] adds an optional sleep between back-to-back calls.
 ///
@@ -36,12 +37,14 @@ class PromptSpec {
 Future<void> runLLMExperiment({
   required String datasetCsvPath,
   required List<PromptSpec> prompts,
-  required String modelName,
   required String outputCsvPath,
   required Future<String> Function(String prompt) generate,
   int maxQuestions = -1,
   Duration cooldownBetweenCalls = Duration.zero,
 }) async {
+  final model = ModelManager().selectedModel;
+  final modelName = model?.name ?? model?.filename ?? 'unknown_model';
+
   final dataset = File(datasetCsvPath);
   if (!await dataset.exists()) {
     throw ArgumentError('Dataset not found at $datasetCsvPath');
@@ -199,12 +202,14 @@ String _csvEscape(String value) {
 Future<void> runLLMExperimentFromCsvString({
   required String csvContent,
   required List<PromptSpec> prompts,
-  required String modelName,
   required String outputCsvPath,
   required Future<String> Function(String prompt) generate,
   int maxQuestions = -1,
   Duration cooldownBetweenCalls = Duration.zero,
 }) async {
+  final model = ModelManager().selectedModel;
+  final modelName = model?.name ?? model?.filename ?? 'unknown_model';
+
   // Ensure output directory exists
   final outFile = File(outputCsvPath);
   await outFile.parent.create(recursive: true);
@@ -356,7 +361,6 @@ Future<void> runLLMExperimentFromCsvString({
 Future<void> runExperimentWithLLMService({
   required String datasetCsvPath,
   required List<PromptSpec> prompts,
-  required String modelName,
   required String outputCsvPath,
   int maxQuestions = -1,
   Duration cooldownBetweenCalls = Duration.zero,
@@ -372,7 +376,6 @@ Future<void> runExperimentWithLLMService({
     await runLLMExperiment(
       datasetCsvPath: datasetCsvPath,
       prompts: prompts,
-      modelName: modelName,
       outputCsvPath: outputCsvPath,
       generate: generate,
       maxQuestions: maxQuestions,

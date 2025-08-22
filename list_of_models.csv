@@ -10,7 +10,7 @@ litert-community/gemma3-1b-ft-text-to-sql,1b,"yes, too large",1.0GB,"gemma3_1b_f
 litert-community/Gemma3-1B-IT,1B,yes,NULL,Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task,Best
 litert-community/Llama-3.2-1B-Instruct,1B,yes,1.28GB,NULL,large file
 litert-community/TinyLlama-1.1B-Chat-v1.0,1.1B,Yes,NULL,"","SA54 could not run, too large"
-litert-community/Qwen2.5-1.5B-Instruct,1.5B,yes(large),smallest 1.5GB,"",too large
+litert-community/Qwen2.5-1.5B-Instruct,1.5B,yes(large),1.5GB,"",too large
 litert-community/Hammer2.1-1.5b,1.5b,NULL,NULL,NULL,NULL
 litert-community/DeepSeek-R1-Distill-Qwen-1.5B,1.5B,yes(large),1.8GB,NULL,too large
 litert-community/Gemma2-2B-IT,2B,web only,27.1GB,NULL,very large
