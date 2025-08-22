@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:medico_ai/utils/chat_history_logger.dart';
 
 /// Describes a prompt variant to be tested in the experiment.
-/// [label] is a short identifier for the prompt (e.g., "baseline", "med_safety_v2").
+/// [label] is a short identifier for the prompt (e.g., "baseline", "med_safety").
 /// [template] is the text with a `{question}` placeholder that will be replaced
 /// by the dataset question.
 class PromptSpec {
@@ -26,7 +26,7 @@ class PromptSpec {
 /// - For each [PromptSpec] in [prompts], this will call [generate] with the
 ///   rendered prompt (template with `{question}` substituted), measure response
 ///   latency, and write rows to [outputCsvPath] with headers:
-///   `timestamp_iso,model,prompt_label,question,answer,response_ms`.
+///   `time_stamp,model_name,prompt_type,question,answer,response_ms`.
 /// - [modelName] is recorded for every row to identify the model used.
 /// - If [maxQuestions] > 0, only the first N questions will be used.
 /// - [cooldownBetweenCalls] adds an optional sleep between back-to-back calls.
@@ -56,7 +56,7 @@ Future<void> runLLMExperiment({
   final sink = outFile.openWrite(mode: FileMode.append, encoding: utf8);
   try {
     if (needsHeader) {
-      sink.writeln('timestamp_iso,model,prompt_label,question,reference_answer,answer,response_ms');
+      sink.writeln('time_stamp,model_name,prompt_type,question,answer,response_ms');
     }
 
     // Parse CSV lazily to handle large files without loading all into memory
@@ -214,7 +214,7 @@ Future<void> runLLMExperimentFromCsvString({
   final sink = outFile.openWrite(mode: FileMode.append, encoding: utf8);
   try {
     if (needsHeader) {
-      sink.writeln('timestamp_iso,model,prompt_label,question,reference_answer,answer,response_ms');
+      sink.writeln('time_stamp,model_name,prompt_type,question,answer,response_ms');
     }
 
     final allLines = const LineSplitter().convert(csvContent);
