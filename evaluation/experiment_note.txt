@@ -14,8 +14,9 @@ Gemma3-1b.task
 1. Gemma3-1B(689MB) : https://huggingface.co/litert-community/Gemma3-1B-IT
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
+4. Smollm-135M : https://huggingface.co/litert-community/SmolLM-135M
 APK size : 1.14GB
-
+adb
 Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 this model is too large to run on A54
@@ -34,12 +35,21 @@ System prompt:
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
 
+Test data constraints:
 
+Prompts 1-10: No specific length expectation.
 
+Prompts 11-20: Answer in no more than 50 words.
+
+Prompts 21-30: Answer in no more than 100 words.
+
+Prompts 31-40: Answer in no more than 500 words.
+
+Prompts 41-50: Answer in a few words.
 
 Note: 
 how to adb push local models to remote?
-adb push <local_path> <remote_path>
+syntax: adb push <local_path> <remote_path>
 
 adb shell mkdir -p /data/local/tmp/llm
 adb push /Users/aqilafarahmand/Downloads/Qwen2.5-0.5B.task /data/local/tmp/llm/
@@ -52,6 +62,8 @@ adb shell rm /data/local/tmp/llm/Gemma3-1B.task
 ```bash
 adb shell run-as it.aqila.farahmand.medicoai ls -lh app_flutter/chat_logs
 adb exec-out run-as it.aqila.farahmand.medicoai cat "app_flutter/chat_logs/chat_history_$(date +%F).csv" > chat_history_$(date +%F).csv
+
+adb shell rm app_flutter/chat_logs
 # or copy to public Downloads, then pull:
 adb shell run-as it.aqila.farahmand.medicoai cp "app_flutter/chat_logs/chat_history_$(date +%F).csv" /sdcard/Download/
 adb pull /sdcard/Download/chat_history_$(date +%F).csv
