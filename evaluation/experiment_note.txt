@@ -22,7 +22,7 @@ this model is too large to run on A54
 
 Note: We have found that models less than equals to 1B parameters are fast in response time however it comes with cost of performance, i.e start to hallucinate and not very reliable for medical information.
 
-System prompt structure:
+System prompt:
 
       label: 'baseline',
       template: 'You are a helpful assistant. Answer concisely.\n\nQuestion
@@ -34,10 +34,6 @@ System prompt structure:
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
 
-Processing model: Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task
-I/flutter (24915): Model size: 657.37 MB
-I/flutter (24915): Processing model: Qwen2.5-0.5B.task
-I/flutter (24915): Model size: 521.34 MB
 
 
 
