@@ -57,13 +57,13 @@ class SettingsScreen extends StatelessWidget {
                     // Define simple prompt variants
                     final prompts = <PromptSpec>[
                       const PromptSpec(
-                        label: 'baseline_50_words',
-                        template: 'You are a helpful assistant. Answer in no more than 50 words.\n\nQuestion: {question}\nAnswer:',
+                        label: 'baseline_100_words',
+                        template: 'You are a helpful assistant. Answer in no more than 100 words.\n\nQuestion: {question}\nAnswer:',
                       ),
                       const PromptSpec(
-                        label: 'medical_safety_50_words',
+                        label: 'medical_safety_100_words',
                         template:
-                            'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice. Answer in no more than 50 words.\n\nQuestion: {question}\nAnswer:',
+                            'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice. Answer in no more than 100 words.\n\nQuestion: {question}\nAnswer:',
                       ),
                     ];
 
