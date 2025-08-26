@@ -58,7 +58,6 @@ Remove:
 adb shell rm /data/local/tmp/llm/Gemma3-1B.task
 
 ### how to pull chat logs?
-
 ```bash
 adb shell run-as it.aqila.farahmand.medicoai ls -lh app_flutter/chat_logs
 adb exec-out run-as it.aqila.farahmand.medicoai cat "app_flutter/chat_logs/chat_history_$(date +%F).csv" > chat_history_$(date +%F).csv
