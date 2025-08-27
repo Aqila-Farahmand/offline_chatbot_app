@@ -1,7 +1,6 @@
 import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
-import '../constants/prompts.dart';
 
 import 'mediapipe_android_service.dart';
 
@@ -10,7 +9,7 @@ class LLMService {
   static String? _modelPath;
   static String? _llamaCliPath;
   static final ModelManager _modelManager = ModelManager();
-  
+
   static bool _isMediaPipe = false;
 
   static Future<void> initialize() async {
@@ -98,36 +97,10 @@ class LLMService {
     }
   }
 
-  static Future<String> generateResponse(String prompt, {List<Map<String, String>>? history}) async {
+  static Future<String> generateResponse(String prompt) async {
     if (!_isInitialized) {
       throw Exception('LLM not initialized. Please initialize first.');
     }
-
-    // Prepend the MedicoAI safety system prompt for all platforms
-    // Unified conversation format across all platforms: User/Assistant
-    const String userLabel = 'User';
-    const String assistantLabel = 'Assistant';
-
-    final buffer = StringBuffer();
-    // Include system guidance
-    buffer.writeln(kMedicoAISystemPrompt.trim());
-    buffer.writeln('Respond in plain text. Do not use JSON, code blocks, or tool calls.');
-    if (history != null && history.isNotEmpty) {
-      for (final turn in history) {
-        final type = turn['type'];
-        final msg = (turn['message'] ?? '').trim();
-        if (msg.isEmpty) continue;
-        if (type == 'user') {
-          buffer.writeln('$userLabel: ' + msg);
-        } else if (type == 'bot') {
-          buffer.writeln('$assistantLabel: ' + msg);
-        }
-      }
-    }
-    buffer.writeln('$userLabel: ' + prompt);
-    buffer.write('$assistantLabel:');
-    final combinedPrompt = buffer.toString();
-    final chatFormattedPrompt = combinedPrompt;
 
     if (Platform.isAndroid) {
       try {
@@ -135,11 +108,7 @@ class LLMService {
           throw Exception('MediaPipe LLM not initialized');
         }
         print('Generating response using MediaPipe LLM...');
-        final raw = await MediapipeAndroidService.generate(chatFormattedPrompt);
-        final section = raw.contains(assistantLabel + ':')
-            ? raw.split(assistantLabel + ':').last
-            : raw;
-        return _cleanResponse(section);
+        return await MediapipeAndroidService.generate(prompt);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -157,8 +126,8 @@ class LLMService {
         final tempDir = await BundleUtils.getTempDirectory();
         print('Using temp directory: $tempDir');
 
-        // Format the prompt with system instruction for medical context
-        final formattedPrompt = chatFormattedPrompt;
+        // Format the prompt for medical context
+        final formattedPrompt = 'User: $prompt\nAssistant:';
 
         // Create a temporary file for the prompt
         final promptFile = File('$tempDir/prompt.txt');
@@ -179,7 +148,7 @@ class LLMService {
             '-f',
             promptFile.path,
             '--temp',
-            '0.65',
+            '0.7',
             '--top_p',
             '0.9',
             '--threads',
@@ -188,15 +157,6 @@ class LLMService {
             '2048',
             '-n',
             '512',
-            // Stop when the model tries to switch roles or emits common end tokens
-            '-r',
-            'User:',
-            '-r',
-            'Assistant:',
-            '-r',
-            'EOF',
-            '-r',
-            'EOF by user',
           ],
           environment: {
             'DYLD_LIBRARY_PATH':
@@ -212,10 +172,16 @@ class LLMService {
 
         // Wrap result in Shell-like Output
         final responseText = result.stdout.toString();
-        final rawSection = responseText.contains(assistantLabel + ':')
-            ? responseText.split(assistantLabel + ':').last
-            : responseText;
-        final response = _cleanResponse(rawSection);
+        final rawResponse = responseText.split('Assistant:').last.trim();
+        // Remove any leading '<|assistant|>', 'Assistant', 'Assistant:', 'Assistant <...>', 'model', 'model:', 'model <...>', or similar (case-insensitive, repeated)
+        String response = rawResponse;
+        final prefixPattern = RegExp(
+          r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
+          caseSensitive: false,
+        );
+        while (prefixPattern.hasMatch(response)) {
+          response = response.replaceFirst(prefixPattern, '').trim();
+        }
 
         // Clean up the temporary file
         await promptFile.delete();
@@ -227,67 +193,6 @@ class LLMService {
       }
     }
   }
-
-  static String _cleanResponse(String text) {
-    final original = text.trim();
-    String response = original;
-
-    // Remove common assistant prefixes repeatedly
-    final prefixPattern = RegExp(
-      r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
-      caseSensitive: false,
-    );
-    while (prefixPattern.hasMatch(response)) {
-      response = response.replaceFirst(prefixPattern, '').trim();
-    }
-
-    // Remove all code fences and markdown headings inline
-    response = response.replaceAll(RegExp(r'```[\s\S]*?```', multiLine: true), '');
-    response = response.replaceAll(RegExp(r'^\s*#+\s*', multiLine: true), '');
-
-    // Remove tool/JSON artifacts
-    if (RegExp(r'^\s*\[\s*\{').hasMatch(response)) {
-      // If starts with JSON array/object, drop it and keep nothing
-      response = '';
-    }
-
-    // Remove known placeholders
-    response = response.replaceAll('[bullet list]', '').replaceAll('General non-diagnostic information.', '');
-
-    // Truncate at trailing role switches or EOF markers
-    final stopMarkers = <String>['\nUser:', '\nAssistant:', 'User:', 'Assistant:', 'EOF by user', 'EOF', '<eos>', '</s>'];
-    int cut = response.length;
-    for (final m in stopMarkers) {
-      final i = response.indexOf(m);
-      if (i != -1 && i < cut) cut = i;
-    }
-    response = response.substring(0, cut);
-
-    // Strip blockquote markers ('>') at line starts
-    response = response
-        .split('\n')
-        .map((line) => line.replaceFirst(RegExp(r'^\s*>\s*'), ''))
-        .join('\n');
-
-    response = response.trim();
-
-    // Fallback: if cleaning resulted in empty output, return original
-    if (response.isEmpty) {
-      response = original;
-    }
-    if (response.isEmpty) {
-      response = 'I could not generate a response. Could you clarify your question?';
-    }
-    return response;
-  }
-
-  // Test method for debugging (removed since we're using ONNX now)
-  // static Future<String> testAndroidNativeLibrary() async {
-  //   if (Platform.isAndroid && _androidService != null) {
-  //     return await _androidService!.testNativeLibrary();
-  //   }
-  //   return 'Not available on this platform';
-  // }
 
   static void dispose() {
     if (Platform.isAndroid) {
