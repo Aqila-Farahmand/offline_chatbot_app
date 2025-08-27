@@ -33,9 +33,14 @@ def generate_time_plot():
 
     combined_df = pd.concat(results, ignore_index=True)
 
-    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_label"]
+    pretty_prompt_label = combined_df["prompt_label"].str.replace(r'_(\d+)_words', r' (\1 words)', regex=True)
+    pretty_prompt_label = pretty_prompt_label.str.replace('_', ' ')
+
+    combined_df["combination"] = combined_df["model_name"] + " - " + pretty_prompt_label
 
     palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
+    # sort the data alphabetically by combination
+    combined_df = combined_df.sort_values(by="combination")
 
     plt.figure(figsize=(14, 8))
     ax = sns.boxplot(
