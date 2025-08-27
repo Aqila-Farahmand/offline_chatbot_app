@@ -15,7 +15,8 @@ Gemma3-1b.task
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
 4. Smollm-135M : https://huggingface.co/litert-community/SmolLM-135M
-APK size : 1.14GB
+
+
 adb
 Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
@@ -30,7 +31,7 @@ System prompt:
 
       label: 'medical_safety',
       template:
-          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice.
+          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a doctor for personal advice.
 
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
