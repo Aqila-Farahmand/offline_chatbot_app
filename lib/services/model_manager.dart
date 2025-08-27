@@ -72,18 +72,8 @@ class ModelManager extends ChangeNotifier {
         }
       }
 
-      // Clean up: Remove any .gguf files in the writable models dir that are no longer in assets/models
-      final dir = Directory(_modelsPath!);
-      final files = dir.listSync().whereType<File>().where(
-        (f) => f.path.endsWith('.gguf'),
-      );
-      for (final file in files) {
-        final filename = file.path.split('/').last;
-        if (!assetModelFilenames.contains(filename)) {
-          print('Removing orphaned model: $filename');
-          await file.delete();
-        }
-      }
+      // Note: Do not remove files from the writable models directory. Users may
+      // have downloaded additional models that are not bundled with assets.
     } catch (e) {
       // Log but do not fail initialisation – app can still run if copy fails.
       print('Error copying bundled models: $e');
@@ -162,6 +152,10 @@ class ModelManager extends ChangeNotifier {
       print('Error scanning models: $e');
       rethrow;
     }
+  }
+
+  Future<void> rescanModels() async {
+    await _scanDownloadedModels();
   }
 
   Future<String?> getSelectedModelPath() async {

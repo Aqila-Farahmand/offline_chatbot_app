@@ -1,7 +1,6 @@
 import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
-import '../constants/prompts.dart';
 
 import 'mediapipe_android_service.dart';
 
@@ -10,7 +9,7 @@ class LLMService {
   static String? _modelPath;
   static String? _llamaCliPath;
   static final ModelManager _modelManager = ModelManager();
-  
+
   static bool _isMediaPipe = false;
 
   static Future<void> initialize() async {
@@ -103,18 +102,13 @@ class LLMService {
       throw Exception('LLM not initialized. Please initialize first.');
     }
 
-    // Prepend the MedicoAI safety system prompt for all platforms
-    final combinedPrompt = 'System: ' + kMedicoAISystemPrompt + '\n\nUser: ' + prompt;
-    final chatFormattedPrompt = combinedPrompt + '\nAssistant:';
-
     if (Platform.isAndroid) {
       try {
         if (!_isMediaPipe) {
           throw Exception('MediaPipe LLM not initialized');
         }
         print('Generating response using MediaPipe LLM...');
-        final raw = await MediapipeAndroidService.generate(chatFormattedPrompt);
-        return _cleanResponse(raw);
+        return await MediapipeAndroidService.generate(prompt);
       } catch (e) {
         print('Error generating response on Android: $e');
         rethrow;
@@ -132,8 +126,8 @@ class LLMService {
         final tempDir = await BundleUtils.getTempDirectory();
         print('Using temp directory: $tempDir');
 
-        // Format the prompt with system instruction for medical context
-        final formattedPrompt = chatFormattedPrompt;
+        // Format the prompt for medical context
+        final formattedPrompt = 'User: $prompt\nAssistant:';
 
         // Create a temporary file for the prompt
         final promptFile = File('$tempDir/prompt.txt');
@@ -154,7 +148,7 @@ class LLMService {
             '-f',
             promptFile.path,
             '--temp',
-            '0.6',
+            '0.7',
             '--top_p',
             '0.9',
             '--threads',
@@ -178,10 +172,16 @@ class LLMService {
 
         // Wrap result in Shell-like Output
         final responseText = result.stdout.toString();
-        final rawSection = responseText.contains('Assistant:')
-            ? responseText.split('Assistant:').last
-            : responseText;
-        final response = _cleanResponse(rawSection);
+        final rawResponse = responseText.split('Assistant:').last.trim();
+        // Remove any leading '<|assistant|>', 'Assistant', 'Assistant:', 'Assistant <...>', 'model', 'model:', 'model <...>', or similar (case-insensitive, repeated)
+        String response = rawResponse;
+        final prefixPattern = RegExp(
+          r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
+          caseSensitive: false,
+        );
+        while (prefixPattern.hasMatch(response)) {
+          response = response.replaceFirst(prefixPattern, '').trim();
+        }
 
         // Clean up the temporary file
         await promptFile.delete();
@@ -193,36 +193,6 @@ class LLMService {
       }
     }
   }
-
-  static String _cleanResponse(String text) {
-    String response = text.trim();
-
-    // Remove common assistant prefixes repeatedly
-    final prefixPattern = RegExp(
-      r'^(<\|assistant\|>|assistant\s*(<[^>]*>)?\s*:?|model\s*(<[^>]*>)?\s*:?)',
-      caseSensitive: false,
-    );
-    while (prefixPattern.hasMatch(response)) {
-      response = response.replaceFirst(prefixPattern, '').trim();
-    }
-
-    // If wrapped in a single triple-backtick code fence, unwrap it
-    final fencePattern = RegExp(r'^```[a-zA-Z0-9]*\s*\n?([\s\S]*?)\n?```$', multiLine: false);
-    final fenceMatch = fencePattern.firstMatch(response);
-    if (fenceMatch != null) {
-      response = (fenceMatch.group(1) ?? '').trim();
-    }
-
-    return response.trim();
-  }
-
-  // Test method for debugging (removed since we're using ONNX now)
-  // static Future<String> testAndroidNativeLibrary() async {
-  //   if (Platform.isAndroid && _androidService != null) {
-  //     return await _androidService!.testNativeLibrary();
-  //   }
-  //   return 'Not available on this platform';
-  // }
 
   static void dispose() {
     if (Platform.isAndroid) {

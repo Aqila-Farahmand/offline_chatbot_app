@@ -1,0 +1,26 @@
+timestamp_iso,model_name,prompt_label,question,response,response_time_ms
+"2025-08-20T11:04:33.358467Z","Gemma3-1B","medicoai_v1","good morning ","Good morning.",3461
+"2025-08-20T11:05:04.142241Z","Gemma3-1B","medicoai_v1","I have low hemoglobin of 11 what to do?","low hemoglobin",1939
+"2025-08-20T11:05:10.091086Z","Gemma3-1B","medicoai_v1","yes","Sorry, but I can't assist with that.",2182
+"2025-08-20T11:05:20.289717Z","Gemma3-1B","medicoai_v1","why not","[[], []]",2006
+"2025-08-20T11:06:01.252174Z","Gemma3-1B","medicoai_v1","I have 37.5 body temperature what to do","Understood.",1938
+"2025-08-20T11:06:09.885273Z","Gemma3-1B","medicoai_v1","ok","Good afternoon!",1942
+"2025-08-20T11:06:19.415416Z","Gemma3-1B","medicoai_v1","What is fever?","Understood. Please provide more context or details about the symptoms you are referring to.",2420
+"2025-08-20T11:06:22.011054Z","Gemma3-1B","medicoai_v1","How can I treat a minor headache at home?","https://www.example.com/treat-minor-headache-at-home",2369
+"2025-08-20T11:06:24.394733Z","Gemma3-1B","medicoai_v1","What are the symptoms of a common cold?","(symptoms: common cold)",2177
+"2025-08-20T11:06:26.811506Z","Gemma3-1B","medicoai_v1","Can you explain the importance of a balanced diet?","No. 1.0",2209
+"2025-08-20T11:06:30.795978Z","Gemma3-1B","medicoai_v1","What are some ways to prevent seasonal allergies?","Good evening, [User's Name].   We're here to help you. What would you like to know?  1. What are some ways to prevent seasonal allergies? 2. Contact us for help with allergies or seasonal allergies.",3773
+"2025-08-20T11:06:33.165805Z","Gemma3-1B","medicoai_v1","Please describe the function of the human heart in detail.","Function: Human Heart",2162
+"2025-08-20T11:06:39.838412Z","Gemma3-1B","medicoai_v1","Could you provide an overview of the different types of vitamins and their benefits?","Type of vitamins:  - Vitamin A (vitamins B12, phosphorus) - Vitamin B (vitamins C, E) - Vitamin C (vitamins A, K, E, D, K) - Vitamin D (vitamins D1, F1, E) - Vitamin E (vitamins E1, O, F1, D) ``` Safety: ``` Please provide an overview of the different types of vitamins and their benefits.",6463
+"2025-08-20T11:06:48.461798Z","Gemma3-1B","medicoai_v1","I've been feeling tired lately; what are some possible causes and how can I improve my energy levels?","``` There are many possible causes for tiredness. Here are a few tips to help improve energy levels: 1. Exercise regularly: Engage in regular physical activity to burn energy. 2. Eat a healthy diet: Avoid sugary and high-calorie foods to reduce inflammation, fatigue, and energy loss. 3. Avoid alcohol and drugs: Take medication and supplements to manage stress. 4. Limit sedentary work: Try to balance your work and other activities. 5. Manage stress: Practice relaxation techniques, meditation, or listening to music to manage mood. 6. Take breaks: Schedule regular breaks to avoid burnout and improve energy levels. ``` Please let me know if there are any",8414
+"2025-08-20T11:06:51.196354Z","Gemma3-1B","medicoai_v1","Explain the process of digestion from start to finish","OK, let's start digestion from the moment it begins!",2525
+"2025-08-20T11:06:54.160863Z","Gemma3-1B","medicoai_v1","Please discuss the long-term health benefits of regular exercise","**Short Paragraph:** Please discuss the long-term health benefits of regular exercise",2757
+"2025-08-20T11:06:56.587460Z","Gemma3-1B","medicoai_v1","What is a balanced diet?","Healthy foods: balanced",2217
+"2025-08-20T11:06:59.019129Z","Gemma3-1B","medicoai_v1","How does vitamin C benefit the body?","Code: 1",2223
+"2025-08-20T11:07:03.468528Z","Gemma3-1B","medicoai_v1","What is the role of the large intestine?","<blockquote>   The large intestine is the digestive organ of the colon, an organ located in the upper right part of the body. It is the largest intestine, containing the largest segments of the body's largest blood vessels. </blockquote>",4239
+"2025-08-20T11:07:05.747097Z","Gemma3-1B","medicoai_v1","What are the early signs of dehydration?","[]",2069
+"2025-08-20T11:07:08.119552Z","Gemma3-1B","medicoai_v1","How can I manage stress naturally?","Understood.",2163
+"2025-08-20T11:07:10.547574Z","Gemma3-1B","medicoai_v1","What is the function of red blood cells?","No data available.",2218
+"2025-08-20T11:07:12.888758Z","Gemma3-1B","medicoai_v1","How do vaccines work?","Sure.",2132
+"2025-08-20T11:07:18.065775Z","Gemma3-1B","medicoai_v1","What is the difference between a virus and bacteria?","<list>   <item>Virus: A pathogen that causes significant damage or death by taking certain chemical substances from or entering a living cell.</item>   <item>Bacteria: Eukaryotic microorganisms that can reproduce and multiply naturally without the direct involvement of humans.</item> </list>",4962
+"2025-08-20T11:07:20.425278Z","Gemma3-1B","medicoai_v1","What are the health benefits of green tea?","Surething",2150

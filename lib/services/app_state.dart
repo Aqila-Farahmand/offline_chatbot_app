@@ -75,7 +75,18 @@ class AppState extends ChangeNotifier {
 
       // Generate response using local LLM and measure time
       final stopwatch = Stopwatch()..start();
-      final response = await LLMService.generateResponse(message);
+      // Build recent history excluding the just-added user message to avoid duplication
+      List<Map<String, String>> recent = List<Map<String, String>>.from(_chatHistory);
+      if (recent.isNotEmpty && recent.last['type'] == 'user') {
+        // Exclude the last user entry which is the same as `message`
+        recent = recent.sublist(0, recent.length - 1);
+      }
+      // Keep only the last 2 turns to stay within tiny model context
+      final recentHistory = recent.length > 2 ? recent.sublist(recent.length - 2) : recent;
+      final response = await LLMService.generateResponse(
+        message,
+        history: recentHistory,
+      );
       stopwatch.stop();
       final responseTimeMs = stopwatch.elapsedMilliseconds;
 
