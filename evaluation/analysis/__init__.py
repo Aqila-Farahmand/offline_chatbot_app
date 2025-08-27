@@ -9,8 +9,10 @@ TOKENIZER_CACHE = {}
 HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_HUB_TOKEN") or os.getenv("HF_TOKEN")
 ORIGINAL_HUGGINGFACE_NAME = {
     'gemma3-1b': 'google/gemma-3-1b-it',
+    'Gemma3-1B': 'google/gemma-3-1b-it',
     'Qwen2.5-0.5B': 'Qwen/Qwen2.5-0.5B-Instruct',
     'hammer2p1_05b': 'MadeAgents/Hammer2.1-0.5b',
+    'SmolLM-135M': 'HuggingFaceTB/SmolLM-135M',
 }
 
 

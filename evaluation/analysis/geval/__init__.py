@@ -49,6 +49,7 @@ def generate_instructions(question: str, answer: str) -> str:
     with open(instruction_file, "r") as file:
         instructions = file.read()
 
+    answer = f"'{answer}'"
     instructions = instructions.replace("{{question}}", question).replace("{{answer}}", answer)
 
     return instructions

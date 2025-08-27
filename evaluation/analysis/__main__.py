@@ -13,19 +13,19 @@ def generate_time_plot():
     # Columns are:
     # - time_stamp -> ignore (optional)
     # - model_name -> group by this
-    # - prompt_type -> group by this
+    # - prompt_label -> group by this
     # - question -> ignore
-    # - answer -> ignore
-    # - response_ms -> collect this
+    # - response -> ignore
+    # - response_time_ms -> collect this
     # Generate boxplot for each model name and prompt type in one single figure
 
     results = []
     for csv_file in RESULTS_PATH.glob("*.csv"):
         df = pd.read_csv(csv_file)
-        if "response_ms" not in df.columns:
+        if "response_time_ms" not in df.columns:
             continue
-        df["response_ms"] = pd.to_numeric(df["response_ms"], errors="coerce")
-        results.append(df[["model_name", "prompt_type", "response_ms"]])
+        df["response_time_ms"] = pd.to_numeric(df["response_time_ms"], errors="coerce")
+        results.append(df[["model_name", "prompt_label", "response_time_ms"]])
 
     if not results:
         print("No results found.")
@@ -33,7 +33,7 @@ def generate_time_plot():
 
     combined_df = pd.concat(results, ignore_index=True)
 
-    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_type"]
+    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_label"]
 
     palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
 
@@ -41,7 +41,7 @@ def generate_time_plot():
     ax = sns.boxplot(
         data=combined_df,
         x="combination",
-        y="response_ms",
+        y="response_time_ms",
         hue="combination",
         palette=palette,
         legend=False
@@ -58,24 +58,24 @@ def generate_time_plot():
     plt.close()
 
 
-def generate_token_length_answer_plot():
-    # For all csv file in RESULTS_PATH, collect the token length of the answer grouped by model name and prompt type
+def generate_token_length_response_plot():
+    # For all csv file in RESULTS_PATH, collect the token length of the response grouped by model name and prompt type
     # Columns are:
     # - time_stamp -> ignore (optional)
     # - model_name -> group by this
-    # - prompt_type -> group by this
+    # - prompt_label -> group by this
     # - question -> ignore
-    # - answer -> collect this
-    # - response_ms -> ignore
+    # - response -> collect this
+    # - response_time_ms -> ignore
     # Generate boxplot for each model name and prompt type in one single figure
 
     results = []
     for csv_file in RESULTS_PATH.glob("*.csv"):
         df = pd.read_csv(csv_file)
-        if "answer" not in df.columns:
+        if "response" not in df.columns:
             continue
-        df["token_length"] = df.apply(lambda row: count_tokens(row["answer"], row["model_name"]),axis=1)
-        results.append(df[["model_name", "prompt_type", "token_length"]])
+        df["token_length"] = df.apply(lambda row: count_tokens(row["response"], row["model_name"]),axis=1)
+        results.append(df[["model_name", "prompt_label", "token_length"]])
 
     if not results:
         print("No results found.")
@@ -83,7 +83,7 @@ def generate_token_length_answer_plot():
 
     combined_df = pd.concat(results, ignore_index=True)
 
-    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_type"]
+    combined_df["combination"] = combined_df["model_name"] + " - " + combined_df["prompt_label"]
 
     palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
 
@@ -112,32 +112,32 @@ def generate_geval_score_plot(dimension: str):
     # Columns are:
     # - time_stamp -> ignore (optional)
     # - model_name -> group by this
-    # - prompt_type -> group by this
+    # - prompt_label -> group by this
     # - question -> collect this
-    # - answer -> collect this
-    # - response_ms -> ignore
+    # - response -> collect this
+    # - response_time_ms -> ignore
     # Generate boxplot for each model name and prompt type in one single figure
 
     results = {}
     for csv_file in RESULTS_PATH.glob("*.csv"):
         df = pd.read_csv(csv_file)
-        # Generate G-Eval scores for each group of model_name and prompt_type
+        # Generate G-Eval scores for each group of model_name and prompt_label
         # Use the generate_geval_file function to generate the G-Eval scores files first
-        if "answer" not in df.columns or "question" not in df.columns:
+        if "response" not in df.columns or "question" not in df.columns:
             continue
-        unique_combinations = df.groupby(["model_name", "prompt_type"]).size().reset_index().rename(columns={0: "count"})
+        unique_combinations = df.groupby(["model_name", "prompt_label"]).size().reset_index().rename(columns={0: "count"})
         if unique_combinations.empty:
             continue
         for _, row in unique_combinations.iterrows():
             model_name = row["model_name"]
-            prompt_type = row["prompt_type"]
-            key = f"{model_name} - {prompt_type}"
+            prompt_label = row["prompt_label"]
+            key = f"{model_name} - {prompt_label}"
             if key not in results:
                 results[key] = []
             # Generate G-Eval scores for the current combination
-            score_file = GEVAL_PATH / f"{model_name}_{prompt_type}_geval_scores.csv"
-            filtered_df = df[(df["model_name"] == model_name) & (df["prompt_type"] == prompt_type)]
-            generate_geval_file(filtered_df["answer"].values, filtered_df["question"].values, score_file)
+            score_file = GEVAL_PATH / f"{model_name}_{prompt_label}_geval_scores.csv"
+            filtered_df = df[(df["model_name"] == model_name) & (df["prompt_label"] == prompt_label)]
+            generate_geval_file(filtered_df["response"].values, filtered_df["question"].values, score_file)
             if score_file.exists():
                 score_df = pd.read_csv(score_file)
                 if dimension in score_df.columns:
@@ -151,7 +151,7 @@ def generate_geval_score_plot(dimension: str):
         for key, scores in results.items()
         for score in scores
     ])
-    combined_df["model_name"], combined_df["prompt_type"] = zip(*combined_df["combination"].str.split(" - "))
+    combined_df["model_name"], combined_df["prompt_label"] = zip(*combined_df["combination"].str.split(" - "))
     palette = sns.color_palette("viridis", len(combined_df["combination"].unique()))
     plt.figure(figsize=(14, 8))
     ax = sns.violinplot(
@@ -174,6 +174,6 @@ def generate_geval_score_plot(dimension: str):
 
 if __name__ == '__main__':
     fire.Fire(generate_time_plot)
-    fire.Fire(generate_token_length_answer_plot)
+    fire.Fire(generate_token_length_response_plot)
     for dimension in GEVAL_DIMENSIONS:
         fire.Fire(lambda dim=dimension: generate_geval_score_plot(dim))
