@@ -59,8 +59,18 @@ class SettingsScreen extends StatelessWidget {
                     // Use the same default system prompt as the app by passing raw question
                     final prompts = <PromptSpec>[
                       const PromptSpec(
+<<<<<<< HEAD
                         label: kMedicoAIPromptLabel,
                         template: '{question}',
+=======
+                        label: 'baseline',
+                        template: 'You are a helpful assistant. Answer concisely.\n\nQuestion: {question}\nAnswer:',
+                      ),
+                      const PromptSpec(
+                        label: 'medical_safety',
+                        template:
+                            'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a doctor for personal advice.\n\nQuestion: {question}\nAnswer:',
+>>>>>>> ac7002715d88820ba875b02e66d739ae57b41f35
                       ),
                     ];
 
@@ -69,7 +79,10 @@ class SettingsScreen extends StatelessWidget {
                       await runLLMExperimentFromCsvString(
                         csvContent: csvContent,
                         prompts: prompts,
+<<<<<<< HEAD
                         modelName: (ModelManager().selectedModel?.name ?? ModelManager().selectedModel?.filename ?? 'unknown'),
+=======
+>>>>>>> ac7002715d88820ba875b02e66d739ae57b41f35
                         outputCsvPath: outputCsv,
                         generate: (p) => LLMService.generateResponse(p),
                         cooldownBetweenCalls: const Duration(milliseconds: 200),

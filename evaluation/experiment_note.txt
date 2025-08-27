@@ -14,49 +14,55 @@ Gemma3-1b.task
 1. Gemma3-1B(689MB) : https://huggingface.co/litert-community/Gemma3-1B-IT
 2. qwen2.5-0.5b(547MB): https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct
 3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
+4. Smollm-135M : https://huggingface.co/litert-community/SmolLM-135M
 APK size : 1.14GB
-
+adb
 Note:
 4. litert-community/TinyLlama-1.1B-Chat-v1.0(1.15GB): https://huggingface.co/litert-community/TinyLlama-1.1B-Chat-v1.0
 this model is too large to run on A54
 
-System prompt structure (Unified: User/Assistant):
+Note: We have found that models less than equals to 1B parameters are fast in response time however it comes with cost of performance, i.e start to hallucinate and not very reliable for medical information.
 
-  The app and experiments both use conversation turns formatted as:
+System prompt:
 
-    User: <message>
-    Assistant: <response>
+      label: 'baseline',
+      template: 'You are a helpful assistant. Answer concisely.\n\nQuestion
 
-  The system guidance is prepended once by the app service. Experiments now pass the raw question only
-  and rely on the same service to construct the full prompt with history.
+      label: 'medical_safety',
+      template:
+          'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a professional for personal advice.
 
 The test data used for this experiment: evaluation/dataset/questions
 and the results for different models are store : evaluation/results
 
-Processing model: Gemma3-1B-IT_multi-prefill-seq_q4_block128_ekv1280.task
-I/flutter (24915): Model size: 657.37 MB
-I/flutter (24915): Processing model: Qwen2.5-0.5B.task
-I/flutter (24915): Model size: 521.34 MB
+Test data constraints:
 
+Prompts 1-10: No specific length expectation.
 
+Prompts 11-20: Answer in no more than 50 words.
 
-Note: 
+Prompts 21-30: Answer in no more than 100 words.
+
+Prompts 31-40: Answer in no more than 500 words.
+
+Prompts 41-50: Answer in a few words.
+
+Note:
 how to adb push local models to remote?
-adb push <local_path> <remote_path>
+syntax: adb push <local_path> <remote_path>
 
 adb shell mkdir -p /data/local/tmp/llm
 adb push /Users/aqilafarahmand/Downloads/Qwen2.5-0.5B.task /data/local/tmp/llm/
 adb shell ls -lh /data/local/tmp/llm
-
-to remove:
-adb shell rm -rf /data/local/tmp/llm/hammer2p1_0.5b.task
-
+Remove:
+adb shell rm /data/local/tmp/llm/Gemma3-1B.task
 
 ### how to pull chat logs?
-
 ```bash
 adb shell run-as it.aqila.farahmand.medicoai ls -lh app_flutter/chat_logs
 adb exec-out run-as it.aqila.farahmand.medicoai cat "app_flutter/chat_logs/chat_history_$(date +%F).csv" > chat_history_$(date +%F).csv
+
+
 # or copy to public Downloads, then pull:
 adb shell run-as it.aqila.farahmand.medicoai cp "app_flutter/chat_logs/chat_history_$(date +%F).csv" /sdcard/Download/
 adb pull /sdcard/Download/chat_history_$(date +%F).csv
