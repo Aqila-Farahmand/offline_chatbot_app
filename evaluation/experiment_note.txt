@@ -16,6 +16,16 @@ Gemma3-1b.task
 3. Hammer2.1-0.5b : https://huggingface.co/litert-community/Hammer2.1-0.5b
 4. Smollm-135M : https://huggingface.co/litert-community/SmolLM-135M
 
+Found 4 model(s)
+I/flutter (14011): Processing model: Gemma3-1B.task
+I/flutter (14011): Model size: 657.37 MB
+I/flutter (14011): Processing model: Qwen2.5-0.5B.task
+I/flutter (14011): Model size: 521.34 MB
+I/flutter (14011): Processing model: SmolLM-135M.task
+I/flutter (14011): Model size: 527.65 MB
+I/flutter (14011): Processing model: hammer2p1_05b.task
+I/flutter (14011): Model size: 485.35 MB
+
 
 adb
 Note:
