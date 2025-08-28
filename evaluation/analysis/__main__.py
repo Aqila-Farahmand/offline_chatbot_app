@@ -1,6 +1,7 @@
 import re
 import fire
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from evaluation.analysis.geval import generate_geval_file, GEVAL_DIMENSIONS, PATH as GEVAL_PATH
@@ -9,16 +10,6 @@ from evaluation.analysis import PATH as ANALYSIS_PATH, count_tokens
 
 
 def generate_time_plot():
-    # For all csv file in RESULTS_PATH, collect the response time grouped by model name and prompt type
-    # Columns are:
-    # - time_stamp -> ignore (optional)
-    # - model_name -> group by this
-    # - prompt_label -> group by this
-    # - question -> ignore
-    # - response -> ignore
-    # - response_time_ms -> collect this
-    # Generate boxplot for each model name and prompt type in one single figure
-
     results = []
     for csv_file in RESULTS_PATH.glob("*.csv"):
         df = pd.read_csv(csv_file)
@@ -33,41 +24,69 @@ def generate_time_plot():
 
     combined_df = pd.concat(results, ignore_index=True)
 
-    pretty_prompt_label = combined_df["prompt_label"].str.replace(r'_(\d+)_words', r' (\1 words)', regex=True)
-    pretty_prompt_label = pretty_prompt_label.str.replace('_', ' ')
+    # Pretty labels
+    combined_df["pretty_prompt"] = combined_df["prompt_label"].str.replace(r'_(\d+)_words', r' (\1 words)', regex=True)
+    combined_df["pretty_prompt"] = combined_df["pretty_prompt"].str.replace('_', ' ')
 
-    combined_df["combination"] = combined_df["model_name"] + " - " + pretty_prompt_label
-    # Assign a rank to sort the data alphabetically by combination but if there is a number in the prompt label must be in numeric order:
-    # Gemma3-1B - baseline, Gemma3-1B - baseline (50 words), Gemma3-1B - baseline (100 words), Gemma3-1B - baseline (500 words), Gemma3-1B - medical safety
-    # Qwen...
-    # SmolLM...
-    # hummer...
-    combined_df["rank"] = combined_df["prompt_label"].str.extract(r'(\d+)').fillna(0).astype(int)
-    combined_df["rank"] = combined_df["rank"].map({0: 0, 50: 1, 100: 2, 500: 3})
-    combined_df = combined_df.sort_values(by=["rank", "model_name",])
+    # Sort models alphabetically and prompt numbers numerically
+    combined_df["prompt_rank"] = combined_df["prompt_label"].str.extract(r'(\d+)').fillna(0).astype(int)
+    combined_df["prompt_rank"] = combined_df["prompt_rank"].map({0: 0, 50: 1, 100: 2, 500: 3})
+    combined_df = combined_df.sort_values(by=["prompt_rank", "model_name"])
 
     for filter_label in ["baseline", "safety"]:
         filtered_df = combined_df[combined_df["prompt_label"].str.contains(filter_label, case=False)]
-
         if filtered_df.empty:
             print(f"No data found for {filter_label}.")
             continue
 
-        palette = sns.color_palette("viridis", len(filtered_df["combination"].unique()))
+        # Organize data for boxplot
+        models = filtered_df["model_name"].unique()
+        prompts = filtered_df["pretty_prompt"].unique()
 
-        plt.figure(figsize=(14, 8))
-        ax = sns.boxplot(
-            data=filtered_df,
-            x="combination",
-            y="response_time_ms",
-            hue="combination",
-            palette=palette,
-            legend=False
-        )
+        data = []
+        x_labels_model = []
+        x_labels_prompt = []
+        positions = []
+
+        pos = 0
+        for prompt in prompts:
+            for model in models:
+                subset = filtered_df[(filtered_df["model_name"] == model) &
+                                     (filtered_df["pretty_prompt"] == prompt)]
+                if not subset.empty:
+                    data.append(subset["response_time_ms"].values)
+                    positions.append(pos)
+                    x_labels_model.append(model)
+                    x_labels_prompt.append(prompt)
+                    pos += 1
+
+        plt.figure(figsize=(16, 8))
+        bp = plt.boxplot(data, positions=positions, patch_artist=True)
+
+        # Color boxes
+        colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
+        for patch, color in zip(bp['boxes'], colors):
+            patch.set_facecolor(color)
+
         plt.yscale('log')
-        ax.set_ylabel("Response Time (ms)", fontsize=20)
-        ax.set_xlabel("")
-        plt.xticks(rotation=45, ha="right")
+        plt.ylabel("Response Time (ms)", fontsize=28)
+        plt.yticks(fontsize=20)
+
+        # Set prompt labels (bottom) - group every len(models) boxes
+        prompt_pos = [np.mean(positions[i*len(models):(i+1)*len(models)]) for i in range(len(prompts))]
+        plt.xticks(prompt_pos, prompts, rotation=0, fontsize=24)
+
+        # Set model labels (top) for each box individually
+        ax = plt.gca()
+        ax2 = ax.twiny()
+        ax2.set_xlim(ax.get_xlim())
+        ax2.set_xticks(positions)
+        ax2.set_xticklabels(x_labels_model, rotation=45, ha="center", fontsize=20)
+        ax2.tick_params(axis='x', length=0)
+        ax2.xaxis.set_label_position('top')
+        # ax2.set_xlabel("Model", fontsize=14)
+        # plt.xlabel("Prompt Type", fontsize=14)
+
         plt.tight_layout()
         plt.savefig(ANALYSIS_PATH / f"response_time_distribution_{filter_label}.png")
         plt.savefig(ANALYSIS_PATH / f"response_time_distribution_{filter_label}.pdf")
@@ -75,22 +94,12 @@ def generate_time_plot():
 
 
 def generate_token_length_response_plot():
-    # For all csv file in RESULTS_PATH, collect the token length of the response grouped by model name and prompt type
-    # Columns are:
-    # - time_stamp -> ignore (optional)
-    # - model_name -> group by this
-    # - prompt_label -> group by this
-    # - question -> ignore
-    # - response -> collect this
-    # - response_time_ms -> ignore
-    # Generate boxplot for each model name and prompt type in one single figure
-
     results = []
     for csv_file in RESULTS_PATH.glob("*.csv"):
         df = pd.read_csv(csv_file)
         if "response" not in df.columns:
             continue
-        df["token_length"] = df.apply(lambda row: count_tokens(row["response"], row["model_name"]),axis=1)
+        df["token_length"] = df.apply(lambda row: count_tokens(row["response"], row["model_name"]), axis=1)
         results.append(df[["model_name", "prompt_label", "token_length"]])
 
     if not results:
@@ -99,35 +108,66 @@ def generate_token_length_response_plot():
 
     combined_df = pd.concat(results, ignore_index=True)
 
-    pretty_prompt_label = combined_df["prompt_label"].str.replace(r'_(\d+)_words', r' (\1 words)', regex=True)
-    pretty_prompt_label = pretty_prompt_label.str.replace('_', ' ')
-    combined_df["combination"] = combined_df["model_name"] + " - " + pretty_prompt_label
-    combined_df["rank"] = combined_df["prompt_label"].str.extract(r'(\d+)').fillna(0).astype(int)
-    combined_df["rank"] = combined_df["rank"].map({0: 0, 50: 1, 100: 2, 500: 3})
-    combined_df = combined_df.sort_values(by=["rank", "model_name",])
+    # Pretty prompt labels
+    combined_df["pretty_prompt"] = combined_df["prompt_label"].str.replace(r'_(\d+)_words', r' (\1 words)', regex=True)
+    combined_df["pretty_prompt"] = combined_df["pretty_prompt"].str.replace('_', ' ')
+
+    # Sort numerically by prompt number and alphabetically by model
+    combined_df["prompt_rank"] = combined_df["prompt_label"].str.extract(r'(\d+)').fillna(0).astype(int)
+    combined_df["prompt_rank"] = combined_df["prompt_rank"].map({0: 0, 50: 1, 100: 2, 500: 3})
+    combined_df = combined_df.sort_values(by=["prompt_rank", "model_name"])
 
     for filter_label in ["baseline", "safety"]:
         filtered_df = combined_df[combined_df["prompt_label"].str.contains(filter_label, case=False)]
-
         if filtered_df.empty:
             print(f"No data found for {filter_label}.")
             continue
 
-        palette = sns.color_palette("viridis", len(filtered_df["combination"].unique()))
+        models = filtered_df["model_name"].unique()
+        prompts = filtered_df["pretty_prompt"].unique()
 
-        plt.figure(figsize=(14, 8))
-        ax = sns.violinplot(
-            data=filtered_df,
-            x="combination",
-            y="token_length",
-            hue="combination",
-            palette=palette,
-            legend=False,
-            cut=0
-        )
-        ax.set_ylabel("Token Length", fontsize=20)
-        ax.set_xlabel("")
-        plt.xticks(rotation=45, ha="right")
+        data = []
+        positions = []
+        x_labels_model = []
+        x_labels_prompt = []
+
+        pos = 0
+        for prompt in prompts:
+            for model in models:
+                subset = filtered_df[(filtered_df["model_name"] == model) &
+                                     (filtered_df["pretty_prompt"] == prompt)]
+                if not subset.empty:
+                    data.append(subset["token_length"].values)
+                    positions.append(pos)
+                    x_labels_model.append(model)
+                    pos += 1
+            # center position for prompt label
+            x_labels_prompt.append(np.mean(positions[-len(models):]))
+
+        plt.figure(figsize=(16, 8))
+        # Violin plot
+        parts = plt.boxplot(data, positions=positions, patch_artist=True, showfliers=False)
+
+        # Color each violin
+        colors = plt.cm.viridis(np.linspace(0, 1, len(data)))
+        for patch, color in zip(parts['boxes'], colors):
+            patch.set_facecolor(color)
+
+        plt.ylabel("Token Length", fontsize=28)
+        plt.yticks(fontsize=20)
+
+        # Prompt labels (bottom)
+        plt.xticks(x_labels_prompt, prompts, rotation=0, fontsize=24)
+
+        # Model labels (top)
+        ax = plt.gca()
+        ax2 = ax.twiny()
+        ax2.set_xlim(ax.get_xlim())
+        ax2.set_xticks(positions)
+        ax2.set_xticklabels(x_labels_model, rotation=45, ha="center", fontsize=20)
+        ax2.tick_params(axis='x', length=0)
+        ax2.xaxis.set_label_position('top')
+
         plt.tight_layout()
         plt.savefig(ANALYSIS_PATH / f"token_length_distribution_{filter_label}.png")
         plt.savefig(ANALYSIS_PATH / f"token_length_distribution_{filter_label}.pdf")
@@ -283,7 +323,7 @@ def generate_geval_latex_table():
         lambda x: f"\\textbf{{{x:.2f}}}" if x == best_agg else f"{x:.2f}")
 
     latex_table = "\\begin{table*}[ht]\n\\centering\n"
-    col_format = "c|l|" + "c" * len(GEVAL_DIMENSIONS) + "|c"
+    col_format = "|c|l|" + "c" * len(GEVAL_DIMENSIONS) + "|c|"
     latex_table += f"\\begin{{tabular}}{{{col_format}}}\n"
     latex_table += "\\hline\n"
 
