@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'llm_service.dart';
-import '../constants/prompts.dart';
 import 'model_manager.dart';
 import '../utils/chat_history_logger.dart';
 
@@ -75,18 +74,7 @@ class AppState extends ChangeNotifier {
 
       // Generate response using local LLM and measure time
       final stopwatch = Stopwatch()..start();
-      // Build recent history excluding the just-added user message to avoid duplication
-      List<Map<String, String>> recent = List<Map<String, String>>.from(_chatHistory);
-      if (recent.isNotEmpty && recent.last['type'] == 'user') {
-        // Exclude the last user entry which is the same as `message`
-        recent = recent.sublist(0, recent.length - 1);
-      }
-      // Keep only the last 2 turns to stay within tiny model context
-      final recentHistory = recent.length > 2 ? recent.sublist(recent.length - 2) : recent;
-      final response = await LLMService.generateResponse(
-        message,
-        history: recentHistory,
-      );
+      final response = await LLMService.generateResponse(message);
       stopwatch.stop();
       final responseTimeMs = stopwatch.elapsedMilliseconds;
 
@@ -96,7 +84,6 @@ class AppState extends ChangeNotifier {
         userQuestion: message,
         modelResponse: response,
         responseTimeMs: responseTimeMs,
-        promptLabel: kMedicoAIPromptLabel,
       );
 
       // Add bot response to chat
