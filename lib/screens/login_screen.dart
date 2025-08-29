@@ -115,6 +115,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _buildToggleButton({
+    required String text,
+    required bool isSelected,
+    required VoidCallback? onPressed,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : null,
+          foregroundColor: isSelected
+              ? Theme.of(context).colorScheme.onPrimary
+              : null,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        child: Text(text),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -132,37 +156,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
                 // Toggle buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => setState(() {
-                              _isSignUp = false;
-                            }),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: !_isSignUp
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildToggleButton(
+                        text: 'Sign In',
+                        isSelected: !_isSignUp,
+                        onPressed: _isLoading
+                            ? null
+                            : () => setState(() {
+                                _isSignUp = false;
+                              }),
                       ),
-                      child: const Text('Log In'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () => setState(() {
-                              _isSignUp = true;
-                            }),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isSignUp
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
+                      _buildToggleButton(
+                        text: 'Sign Up',
+                        isSelected: _isSignUp,
+                        onPressed: _isLoading
+                            ? null
+                            : () => setState(() {
+                                _isSignUp = true;
+                              }),
                       ),
-                      child: const Text('Sign Up'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 if (_isSignUp) ...[
@@ -241,14 +264,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         : _isSignUp
                         ? _signUp
                         : _signIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     child: _isLoading
                         ? const CircularProgressIndicator.adaptive()
-                        : Text(_isSignUp ? 'Sign Up' : 'Log In'),
+                        : Text(_isSignUp ? 'Sign Up' : 'Sign In'),
                   ),
                 ),
                 if (!_isSignUp)
                   TextButton(
                     onPressed: _isLoading ? null : _resetPassword,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
                     child: const Text('Forgot password?'),
                   ),
                 if (_error != null) ...[

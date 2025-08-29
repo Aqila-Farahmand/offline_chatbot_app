@@ -9,75 +9,131 @@ class ChatMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser) _buildAvatar(),
-          const SizedBox(width: 8),
+          if (!isUser) _buildAvatar(context),
+          const SizedBox(width: 12),
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(12),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isUser
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.surfaceVariant,
-                borderRadius: BorderRadius.circular(12),
+                    ? colorScheme.primary
+                    : colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(isUser ? 20 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.shadow.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: isUser
                   ? Text(
                       message,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: colorScheme.onPrimary,
+                        fontSize: 16,
+                        height: 1.4,
                       ),
                     )
                   : MarkdownBody(
                       data: message,
                       styleSheet: MarkdownStyleSheet(
                         p: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          height: 1.35,
+                          color: colorScheme.onSurface,
+                          height: 1.4,
+                          fontSize: 16,
                         ),
-                        listBullet: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        listBullet: TextStyle(color: colorScheme.onSurface),
                         code: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface,
-                          backgroundColor: Colors.transparent,
+                          color: colorScheme.onSurface,
+                          backgroundColor: colorScheme.surfaceContainerLowest
+                              .withValues(alpha: 0.5),
                           fontFamily: 'monospace',
+                          fontSize: 14,
                         ),
-                        codeblockDecoration: const BoxDecoration(
-                          color: Colors.transparent,
+                        codeblockDecoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLowest.withValues(
+                            alpha: 0.3,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         blockquoteDecoration: BoxDecoration(
-                          color: Colors.transparent,
+                          color: colorScheme.surfaceContainerLowest.withValues(
+                            alpha: 0.3,
+                          ),
                           border: Border(
                             left: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                              width: 3,
+                              color: colorScheme.primary.withValues(alpha: 0.5),
+                              width: 4,
                             ),
                           ),
+                        ),
+                        h1: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        h2: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        h3: TextStyle(
+                          color: colorScheme.onSurface,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
             ),
           ),
-          const SizedBox(width: 8),
-          if (isUser) _buildAvatar(),
+          const SizedBox(width: 12),
+          if (isUser) _buildAvatar(context),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
-    return CircleAvatar(
-      backgroundColor: isUser ? Colors.blue : Colors.green,
+  Widget _buildAvatar(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: isUser ? colorScheme.primary : colorScheme.primaryContainer,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.12),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: Icon(
         isUser ? Icons.person : Icons.medical_services,
-        color: Colors.white,
+        color: isUser ? colorScheme.onPrimary : colorScheme.onPrimaryContainer,
+        size: 18,
       ),
     );
   }

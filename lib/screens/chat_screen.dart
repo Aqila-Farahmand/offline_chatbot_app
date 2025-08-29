@@ -6,48 +6,45 @@ import '../widgets/chat_input.dart';
 import '../widgets/model_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/edit_profile_dialog.dart';
-import 'dart:io' show Platform;
-import '../services/llm_service.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('MedicoAI'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
+        title: Row(
+          children: [
+            Icon(
+              Icons.medical_services,
+              color: colorScheme.onSurface,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'MedicoAI',
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        surfaceTintColor: colorScheme.surfaceTint,
         actions: [
-          // Debug button removed since we're using ONNX now
-          // if (Platform.isAndroid)
-          //   IconButton(
-          //     icon: const Icon(Icons.bug_report),
-          //     onPressed: () async {
-          //       try {
-          //         final result = await LLMService.testAndroidNativeLibrary();
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(
-          //             content: Text('Test Result: $result'),
-          //             duration: const Duration(seconds: 5),
-          //           ),
-          //         );
-          //       } catch (e) {
-          //         ScaffoldMessenger.of(context).showSnackBar(
-          //           SnackBar(
-          //             content: Text('Test Error: $e'),
-          //             backgroundColor: Colors.red,
-          //             duration: const Duration(seconds: 5),
-          //           ),
-          //         );
-          //       }
-          //     },
-          //     tooltip: 'Test Native Library',
-          //   ),
           IconButton(
             tooltip: 'Edit Profile',
-            icon: const Icon(Icons.person),
+            icon: Icon(
+              Icons.person_outline,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: () {
               showDialog(
                 context: context,
@@ -56,37 +53,55 @@ class ChatScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            tooltip: 'Logout',
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            icon: Icon(
+              Icons.settings_outlined,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: () {
               Navigator.pushNamed(context, '/settings');
             },
           ),
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            tooltip: 'About',
+            icon: Icon(Icons.info_outline, color: colorScheme.onSurfaceVariant),
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('About MedicoAI'),
-                  content: const Text(
+                  title: Text(
+                    'About MedicoAI',
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  content: Text(
                     'MedicoAI is an offline medical chatbot that provides general health information. '
                     'Please note that this is not a substitute for professional medical advice.',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(color: colorScheme.primary),
+                      ),
                     ),
                   ],
                 ),
               );
+            },
+          ),
+          IconButton(
+            tooltip: 'Logout',
+            icon: Icon(Icons.logout, color: colorScheme.error),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
             },
           ),
         ],
@@ -98,45 +113,105 @@ class ChatScreen extends StatelessWidget {
               builder: (context, appState, child) {
                 if (!appState.isModelLoaded) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: 16),
-                        const Text('No AI Model Loaded'),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => const Dialog(
-                                child: SingleChildScrollView(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: ModelSelector(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.psychology_outlined,
+                              size: 48,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'No AI Model Loaded',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Select a model to start chatting',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  backgroundColor: colorScheme.surface,
+                                  surfaceTintColor: colorScheme.surfaceTint,
+                                  child: const SingleChildScrollView(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(24.0),
+                                      child: ModelSelector(),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Add Model'),
-                        ),
-                      ],
+                              );
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Select Model'),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
 
                 if (appState.chatHistory.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Text(
-                        'Type a message to start',
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 16),
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline,
+                              size: 48,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Start a conversation',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Type a message below to begin chatting with MedicoAI',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -144,6 +219,7 @@ class ChatScreen extends StatelessWidget {
 
                 return ListView.builder(
                   reverse: true,
+                  padding: const EdgeInsets.only(top: 8, bottom: 8),
                   itemCount: appState.chatHistory.length,
                   itemBuilder: (context, index) {
                     final message = appState
