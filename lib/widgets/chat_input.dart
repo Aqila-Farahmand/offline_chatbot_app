@@ -33,70 +33,108 @@ class _ChatInputState extends State<ChatInput> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isProcessing = context.watch<AppState>().isProcessing;
+
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: colorScheme.surface,
         border: Border(
-          top: BorderSide(color: Theme.of(context).colorScheme.outline),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, -2),
+          top: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.12),
+            width: 0.5,
           ),
-        ],
+        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 16.0),
           child: Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _controller,
-                  enabled: !context.watch<AppState>().isProcessing,
-                  onChanged: (text) {
-                    setState(() {
-                      _isComposing = text.isNotEmpty;
-                    });
-                  },
-                  onSubmitted: _isComposing ? _handleSubmitted : null,
-                  decoration: InputDecoration(
-                    hintText: context.watch<AppState>().isProcessing
-                        ? 'Processing...'
-                        : 'Type your message...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(
+                      color: colorScheme.outline.withValues(alpha: 0.12),
+                      width: 1,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
                   ),
-                  style: const TextStyle(fontSize: 16),
+                  child: TextField(
+                    controller: _controller,
+                    enabled: !isProcessing,
+                    onChanged: (text) {
+                      setState(() {
+                        _isComposing = text.isNotEmpty;
+                      });
+                    },
+                    onSubmitted: _isComposing ? _handleSubmitted : null,
+                    decoration: InputDecoration(
+                      hintText: isProcessing
+                          ? 'Processing...'
+                          : 'Type your message...',
+                      hintStyle: TextStyle(
+                        color: colorScheme.onSurfaceVariant,
+                        fontSize: 16,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      suffixIcon: _isComposing && !isProcessing
+                          ? IconButton(
+                              icon: Icon(
+                                Icons.send,
+                                color: colorScheme.primary,
+                                size: 20,
+                              ),
+                              onPressed: () =>
+                                  _handleSubmitted(_controller.text),
+                              tooltip: 'Send message',
+                            )
+                          : null,
+                    ),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: colorScheme.onSurface,
+                    ),
+                    maxLines: null,
+                    textInputAction: TextInputAction.newline,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Material(
-                color: Theme.of(context).primaryColor,
-                shape: const CircleBorder(),
-                child: IconButton(
-                  icon: context.watch<AppState>().isProcessing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send, color: Colors.white),
-                  onPressed:
-                      _isComposing && !context.watch<AppState>().isProcessing
-                      ? () => _handleSubmitted(_controller.text)
-                      : null,
+              const SizedBox(width: 12),
+              if (_isComposing && !isProcessing)
+                FloatingActionButton(
+                  onPressed: () => _handleSubmitted(_controller.text),
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  elevation: 0,
+                  child: const Icon(Icons.send, size: 20),
+                )
+              else if (isProcessing)
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
