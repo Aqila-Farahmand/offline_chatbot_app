@@ -25,7 +25,7 @@ class AppState extends ChangeNotifier {
       // Initialize model manager first
       await _modelManager.initialize();
 
-      // Only try to initialize LLM if we have a model
+      // Initialize LLM on all platforms if a model exists
       if (_modelManager.selectedModel != null) {
         await LLMService.initialize();
         setModelLoaded(true);
