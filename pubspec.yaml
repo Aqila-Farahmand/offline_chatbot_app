@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  js: ^0.6.7
   provider: ^6.1.5
   path_provider: ^2.1.2
   sqflite: ^2.3.2
@@ -35,6 +36,8 @@ flutter:
   assets:
     - assets/images/
     - assets/models/
+    - assets/mediapipe/
+    - assets/mediapipe/wasm/
     # Evaluation datasets
     - evaluation/dataset/questions.csv
   uses-material-design: true

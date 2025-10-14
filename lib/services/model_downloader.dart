@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../utils/bundle_utils.dart';
 
@@ -71,6 +72,10 @@ class ModelDownloader {
     required Function(String) onError,
   }) async {
     try {
+      if (kIsWeb) {
+        onError('Downloading models is not supported on web');
+        return;
+      }
       final modelInfo = availableModels[modelId];
       if (modelInfo == null) {
         onError('Model not found');
@@ -145,4 +150,3 @@ class ModelInfo {
     return '${sizeInGb.toStringAsFixed(1)}GB';
   }
 }
- 

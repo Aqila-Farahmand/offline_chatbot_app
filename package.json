@@ -1,0 +1,19 @@
+{
+  "name": "offline_chatbot_app",
+  "version": "1.0.0",
+  "description": "MedicoAI is a cross-platform Flutter application that runs a Large Language Model **completely on-device**.   It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g. remote clinics, airplanes, or poor-connectivity environments).",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mediapipe/tasks-text": "^0.10.22-rc.20250304"
+  }
+}

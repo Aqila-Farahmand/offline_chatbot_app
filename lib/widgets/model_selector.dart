@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import '../services/model_manager.dart';
 import '../services/app_state.dart';
@@ -29,74 +29,91 @@ class _ModelSelectorState extends State<ModelSelector> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ExpansionTile(
-              title: const Text('Download models'),
-              initiallyExpanded: true,
-              children: [
-                // Desktop (.gguf)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                    child: Text(
-                      'Desktop (.gguf)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+            if (!kIsWeb)
+              ExpansionTile(
+                title: const Text('Download models'),
+                initiallyExpanded: true,
+                children: [
+                  // Desktop (.gguf)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 6.0,
+                      ),
+                      child: Text(
+                        'Desktop (.gguf)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                for (final entry in ModelDownloader.availableModels.entries.where((e) => e.value.filename.endsWith('.gguf')))
-                  _DownloadTile(
-                    modelId: entry.key,
-                    info: entry.value,
-                    onDownloaded: () async {
-                      await modelManager.rescanModels();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Downloaded ${entry.value.name}')),
-                      );
-                    },
-                  ),
-                const SizedBox(height: 8),
-                // Android (.task)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                    child: Text(
-                      'Android (.task)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).colorScheme.primary,
+                  for (final entry
+                      in ModelDownloader.availableModels.entries.where(
+                        (e) => e.value.filename.endsWith('.gguf'),
+                      ))
+                    _DownloadTile(
+                      modelId: entry.key,
+                      info: entry.value,
+                      onDownloaded: () async {
+                        await modelManager.rescanModels();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Downloaded ${entry.value.name}'),
+                          ),
+                        );
+                      },
+                    ),
+                  const SizedBox(height: 8),
+                  // Android (.task)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 6.0,
+                      ),
+                      child: Text(
+                        'Android (.task)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                for (final entry in ModelDownloader.availableModels.entries.where((e) => e.value.filename.endsWith('.task')))
-                  _DownloadTile(
-                    modelId: entry.key,
-                    info: entry.value,
-                    onDownloaded: () async {
-                      await modelManager.rescanModels();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Downloaded ${entry.value.name}')),
-                      );
-                    },
-                  ),
-              ],
-            ),
+                  for (final entry
+                      in ModelDownloader.availableModels.entries.where(
+                        (e) => e.value.filename.endsWith('.task'),
+                      ))
+                    _DownloadTile(
+                      modelId: entry.key,
+                      info: entry.value,
+                      onDownloaded: () async {
+                        await modelManager.rescanModels();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Downloaded ${entry.value.name}'),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
-                Platform.isAndroid
-                    ? 'Tip: On Android, select a .task model (MediaPipe).'
-                    : 'Tip: On desktop (macOS/Windows/Linux), select a .gguf model.',
+                kIsWeb
+                    ? 'Tip: Web preview – local downloads not supported; select a bundled asset if available.'
+                    : 'Tip: On Android, select a .task model (MediaPipe). On desktop, select a .gguf model.',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ),
@@ -125,7 +142,9 @@ class _ModelSelectorState extends State<ModelSelector> {
                     );
                     await appState.reinitializeModel();
                     if (!context.mounted) return;
-                    Navigator.of(context).pop(); // Close dialog and return to chat
+                    Navigator.of(
+                      context,
+                    ).pop(); // Close dialog and return to chat
                   }
                 },
               )
@@ -189,14 +208,19 @@ class _DownloadTileState extends State<_DownloadTile> {
                       const SizedBox(height: 4),
                       Text(
                         widget.info.description,
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(widget.info.formattedSize,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(
+                  widget.info.formattedSize,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   icon: _isDownloading
