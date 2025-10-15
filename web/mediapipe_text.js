@@ -9,26 +9,48 @@ window.MediapipeGenai = (function () {
 
   async function init(options) {
     const {
-      modelAssetPath = './assets/models/gemma3-1b-it-int8-web.task',
-      tasksModulePath = './assets/mediapipe/genai_bundle.mjs',
-      wasmBasePath = './assets/mediapipe/wasm',
+      modelAssetPath = '/assets/models/gemma3-1b-it-int8-web.task',
+      tasksModulePath = '/assets/mediapipe/genai_bundle.mjs',
+      wasmBasePath = '/assets/mediapipe/wasm',
     } = options || {};
 
     if (!('WebAssembly' in window)) {
       throw new Error('WebAssembly not supported in this browser');
     }
 
-    // Dynamically import the MediaPipe Tasks Genai from local assets
-    const tasks = await import(tasksModulePath);
+    // Dynamically import the MediaPipe Tasks Genai from local assets, fallback to web/ if needed
+    let tasks;
+    try {
+      tasks = await import(tasksModulePath);
+    } catch (err1) {
+      console.warn('Falling back to ./assets for tasks module:', err1);
+      try {
+        tasks = await import('./assets/mediapipe/genai_bundle.mjs');
+      } catch (err2) {
+        console.warn('Falling back to web/assets for tasks module:', err2);
+        tasks = await import('web/assets/mediapipe/genai_bundle.mjs');
+      }
+    }
 
-    // Build the base options for WASM files location
-    const fileset = await tasks.FilesetResolver.forGenaiTasks(wasmBasePath);
+    // Build the base options for WASM files location (note the casing: GenAi)
+    let resolvedWasmBase = wasmBasePath;
+    try {
+      // Probe by attempting to resolve fileset; if it throws, fall back
+      await tasks.FilesetResolver.isSimdSupported();
+    } catch (err) {
+      console.warn('Falling back to ./assets for WASM base path:', err);
+      resolvedWasmBase = './assets/mediapipe/wasm';
+    }
+    const fileset = await tasks.FilesetResolver.forGenAiTasks(resolvedWasmBase);
 
-    // Create the text generation task with local model asset
-    genaiTask = await tasks.Genai.createFromOptions(fileset, {
+    // Create the LLM inference task with local model asset
+    genaiTask = await tasks.LlmInference.createFromOptions(fileset, {
       baseOptions: {
         modelAssetPath,
       },
+      // Align precision and cache sizing with the model to avoid WebGPU delegate errors
+      maxTokens: 1280,
+      forceF32: true,
     });
 
     // Note: If using TextGenerator when available:
@@ -43,11 +65,8 @@ window.MediapipeGenai = (function () {
     if (!genaiTask) {
       throw new Error('MediapipeGenai not initialized');
     }
-    // Placeholder: MediaPipe currently exposes TextEmbedder / NLClassifier widely.
-    // If TextGenerator API is available, replace this with generation call.
-    // For now, just echo to demonstrate plumbing; real generation requires
-    // TextGenerator support in the bundled genai_bundle.mjs.
-    return `Local (web) generation is configured, but the TextGenerator API is not available in this build. Prompt: ${prompt}`;
+    // Generate a response using the MediaPipe LLM inference API
+    return await genaiTask.generateResponse(prompt);
   }
 
   function dispose() {
