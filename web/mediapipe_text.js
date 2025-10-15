@@ -5,7 +5,7 @@
 // - A .task model under assets/models/<name>.task
 
 window.MediapipeGenai = (function () {
-  let genaiTask = any;
+  let genaiTask = null;
 
   async function init(options) {
     const {
@@ -51,9 +51,9 @@ window.MediapipeGenai = (function () {
   }
 
   function dispose() {
-    if (textTask && typeof textTask.close === 'function') {
+    if (genaiTask && typeof genaiTask.close === 'function') {
       try {
-        textTask.close();
+        genaiTask.close();
       } catch (err) {
         console.warn('MediapipeGenai.dispose: failed to close task', err);
       }
