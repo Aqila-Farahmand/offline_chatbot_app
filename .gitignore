@@ -72,5 +72,8 @@ logs/
 # add ide related
 coverage
 
+# node related
+node_modules/
+
 
 
