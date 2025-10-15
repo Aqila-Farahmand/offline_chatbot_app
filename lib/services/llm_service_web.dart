@@ -6,11 +6,11 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'model_manager.dart';
 
-@JS('MediapipeText')
-external MediapipeText? get _mediapipeText;
+@JS('MediapipeGenai')
+external MediapipeGenai? get _mediapipeGenai;
 
 @JS()
-extension type MediapipeText(JSObject o) implements JSObject {
+extension type MediapipeGenai(JSObject o) implements JSObject {
   external JSPromise init(InitOptions options);
   external JSPromise generate(String prompt);
   external void dispose();
@@ -40,17 +40,17 @@ class LLMService {
       throw Exception('No model selected');
     }
 
-    // Call MediapipeText.init with local asset paths
-    final mp = _mediapipeText;
+    // Call MediapipeGenai.init with local asset paths
+    final mp = _mediapipeGenai;
     if (mp == null) {
       throw Exception(
-        'MediapipeText JS bridge not found. Ensure mediapipe_text.js is loaded in index.html',
+        'MediapipeGenai JS bridge not found. Ensure mediapipe_text.js is loaded in index.html',
       );
     }
 
     final options = InitOptions(
       modelAssetPath: _modelAssetPath!,
-      tasksModulePath: './assets/mediapipe/text_bundle.mjs',
+      tasksModulePath: './assets/mediapipe/genai_bundle.mjs',
       wasmBasePath: './assets/mediapipe/wasm',
     );
 
@@ -62,16 +62,16 @@ class LLMService {
     if (!_isInitialized) {
       throw Exception('LLM not initialized. Please initialize first.');
     }
-    final mp = _mediapipeText;
+    final mp = _mediapipeGenai;
     if (mp == null) {
-      throw Exception('MediapipeText JS bridge not found.');
+      throw Exception('MediapipeGenai JS bridge not found.');
     }
     final result = await mp.generate(prompt).toDart;
     return result?.toString() ?? '';
   }
 
   static void dispose() {
-    final mp = _mediapipeText;
+    final mp = _mediapipeGenai;
     if (mp != null) {
       try {
         mp.dispose();
