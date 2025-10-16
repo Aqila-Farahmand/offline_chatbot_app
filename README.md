@@ -1,7 +1,7 @@
 # MedicoAI – Offline Chatbot App
 
 MedicoAI is a cross-platform Flutter application that runs a Large Language Model **completely on-device**.  
-It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g. remote clinics, airplanes, or poor-connectivity environments).
+It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g., remote clinics, airplanes, or poor-connectivity environments).
 
 **Disclaimer:** MedicoAI is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified health-care provider with any questions you may have.
 
@@ -9,9 +9,8 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 
 ## Features
 
-- **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) (desktop) or MediaPipe (mobile).
-- **Multi-platform:** Android, iOS, macOS, Windows, Linux (desktop & mobile).  
-  _Web builds are supported but fall back to a cloud model or placeholder because WebAssembly cannot access native binaries._
+- **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) (desktop) or MediaPipe (mobile and web).
+- **Multi-platform:** Android, iOS, macOS and web (desktop & mobile).  
 - **Model manager** – detect, add, and switch between local `.gguf` models.
 - **Firebase authentication** (email / Google) to sync profiles while keeping inference on-device.
 - Modern Flutter UI with **Material 3** styling, dark mode, and responsive layouts.
@@ -25,6 +24,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 | -------- | ---------- | ------------ | --------------------------------------- |
 | Desktop  | llama.cpp  | .gguf        | Native binaries required per OS         |
 | Mobile   | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
+| Web      | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
 
 ---
 
@@ -38,8 +38,8 @@ lib/
 ├── widgets/                # Re-usable UI components
 ├── utils/                  # Helper utilities
 └── models/ & constants/    # Data models and constants
-macos/ | windows/ | linux/   # Desktop runner sources & llama binaries
-assets/models/              # Optional pre-bundled .gguf models
+macos/ | desktop / | web/   # Device runner sources & llama binaries
+assets/models/              # Pre-bundled .gguf and .task models
 ```
 
 ---
@@ -75,7 +75,7 @@ assets/models/              # Optional pre-bundled .gguf models
 
 ## Authentication
 
-To setup firebase authentication:
+To set up Firebase authentication:
 
 - Generate `firebase_options.dart` via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
 
@@ -203,12 +203,12 @@ flutter build windows --release
 
 > Make sure the `llama-cli` executable and its accompanying libraries are
 > present in the platform’s `Resources/llama` (copied automatically by
-> `macos/copy_llama_cli.sh` for macOS). Repeat the same pattern for other
+> `macos/copy_llama_cli.sh` for macOS. Repeat the same pattern for other
 > platforms if necessary.
 
 ---
 
-## Extending / Customising
+## Extending / Customizing
 
 • **Swap models:** Add any `.gguf` file to the application-support _models_ folder or use the in-app _Add model_ flow (to be implemented).  
 • **Temperature / Top-p:** Modify the arguments passed in `LLMService.generateResponse()` to tune creativity.  
