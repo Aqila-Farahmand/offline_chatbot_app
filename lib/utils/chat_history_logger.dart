@@ -1,56 +1,13 @@
-import 'dart:io';
+// Platform-conditional chat history logger wrapper.
+// On IO platforms (Android/iOS/macOS/Windows/Linux) we write to files.
+// On Web we persist CSV data in browser storage via shared_preferences.
 
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import 'chat_history_logger_io.dart'
+    if (dart.library.html) 'chat_history_logger_web.dart'
+    as impl;
 
 class ChatHistoryLogger {
-  static Directory? _cachedLogDir;
-
-  static Future<Directory> _resolveLogDir() async {
-    if (_cachedLogDir != null) return _cachedLogDir!;
-
-    Directory base;
-    try {
-      // Use app-internal documents directory for reliability (always writable)
-      // Android path: /data/user/0/<package>/app_flutter
-      base = await getApplicationDocumentsDirectory();
-    } catch (_) {
-      // Fallback to temp dir if anything goes wrong
-      base = await getTemporaryDirectory();
-    }
-
-    final logDir = Directory(p.join(base.path, 'chat_logs'));
-    if (!await logDir.exists()) {
-      await logDir.create(recursive: true);
-    }
-
-    print('[ChatHistoryLogger] Logs directory: ${logDir.path}');
-    _cachedLogDir = logDir;
-    return logDir;
-  }
-
-  /// Returns the log file for the current date, creating directories/file + header if needed.
-  static Future<File> _getLogFile() async {
-    final logDir = await _resolveLogDir();
-
-    final String date = DateTime.now()
-        .toIso8601String()
-        .split('T')
-        .first; // YYYY-MM-DD
-    final filePath = p.join(logDir.path, 'chat_history_$date.csv');
-    final file = File(filePath);
-
-    if (!await file.exists()) {
-      // Create file and write header row (include timestamp and prompt label)
-      await file.writeAsString(
-        'timestamp_iso,model_name,prompt_label,question,response,response_time_ms\n',
-      );
-    }
-
-    return file;
-  }
-
-  /// Logs a single model response to the CSV file.
+  /// Logs a single model response to a CSV-like sink.
   static Future<void> logModelEval({
     required String modelName,
     required String userQuestion,
@@ -59,23 +16,13 @@ class ChatHistoryLogger {
     String promptLabel = 'default',
     String? timestampIso,
   }) async {
-    try {
-      final file = await _getLogFile();
-
-      String sanitize(String value) {
-        // Escape double-quotes by doubling them and strip line breaks.
-        return value
-            .replaceAll('"', '""')
-            .replaceAll('\n', ' ')
-            .replaceAll('\r', ' ');
-      }
-
-      final ts = timestampIso ?? DateTime.now().toUtc().toIso8601String();
-      final csvLine =
-          '"${sanitize(ts)}","${sanitize(modelName)}","${sanitize(promptLabel)}","${sanitize(userQuestion)}","${sanitize(modelResponse)}",$responseTimeMs\n';
-      await file.writeAsString(csvLine, mode: FileMode.append, flush: true);
-    } catch (e) {
-      print('ChatHistoryLogger error: $e');
-    }
+    await impl.logModelEvalImpl(
+      modelName: modelName,
+      userQuestion: userQuestion,
+      modelResponse: modelResponse,
+      responseTimeMs: responseTimeMs,
+      promptLabel: promptLabel,
+      timestampIso: timestampIso,
+    );
   }
 }

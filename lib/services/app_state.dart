@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'llm_service.dart';
 import 'model_manager.dart';
 import '../utils/chat_history_logger.dart';
+import '../utils/chat_history_remote_logger.dart';
 
 class AppState extends ChangeNotifier {
   bool _isModelLoaded = false;
@@ -78,8 +79,14 @@ class AppState extends ChangeNotifier {
       stopwatch.stop();
       final responseTimeMs = stopwatch.elapsedMilliseconds;
 
-      // Persist model evaluation info to CSV
+      // Persist model evaluation info to CSV (local) and Firestore (remote)
       await ChatHistoryLogger.logModelEval(
+        modelName: modelName,
+        userQuestion: message,
+        modelResponse: response,
+        responseTimeMs: responseTimeMs,
+      );
+      await ChatHistoryRemoteLogger.logModelEvalRemote(
         modelName: modelName,
         userQuestion: message,
         modelResponse: response,

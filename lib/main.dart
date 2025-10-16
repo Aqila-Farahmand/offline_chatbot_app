@@ -9,10 +9,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/admin_logs_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Ensure an authenticated context (anonymous) so Firestore write rules can allow logging
+  try {
+    if (FirebaseAuth.instance.currentUser == null) {
+      await FirebaseAuth.instance.signInAnonymously();
+    }
+  } catch (e) {
+    debugPrint('Anonymous sign-in failed: $e');
+  }
 
   // Listen for authentication state changes and print the user UID when available.
   FirebaseAuth.instance.authStateChanges().listen((User? user) {
@@ -55,6 +65,7 @@ class MyApp extends StatelessWidget {
           '/': (context) => const SplashScreen(),
           '/launch': (context) => _MainAppRouter(),
           '/settings': (context) => const SettingsScreen(),
+          '/admin/logs': (context) => const AdminLogsScreen(),
         },
       ),
     );

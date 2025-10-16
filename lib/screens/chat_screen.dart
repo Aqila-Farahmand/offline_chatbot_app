@@ -10,6 +10,16 @@ import '../widgets/edit_profile_dialog.dart';
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
 
+  bool _isAdmin(User? user) {
+    if (user == null) return false;
+    final email = user.email ?? '';
+    const allowedDomain = '@gmail.com';
+    const allowedUids = 'aqela.af@gmail.com';{
+      // Add specific admin UIDs here if needed
+    }
+    return allowedUids.contains(user.uid) || email.endsWith(allowedDomain);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -39,6 +49,23 @@ class ChatScreen extends StatelessWidget {
         elevation: 0,
         surfaceTintColor: colorScheme.surfaceTint,
         actions: [
+          StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              final isAdmin = _isAdmin(snapshot.data);
+              if (!isAdmin) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'Admin Logs',
+                icon: Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/admin/logs');
+                },
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Edit Profile',
             icon: Icon(
