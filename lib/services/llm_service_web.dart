@@ -50,8 +50,8 @@ class LLMService {
 
     final options = InitOptions(
       modelAssetPath: _modelAssetPath!,
-      tasksModulePath: './assets/mediapipe/genai_bundle.mjs',
-      wasmBasePath: './assets/mediapipe/wasm',
+      tasksModulePath: '/assets/mediapipe/genai_bundle.mjs',
+      wasmBasePath: '/assets/mediapipe/wasm',
     );
 
     await mp.init(options).toDart;
