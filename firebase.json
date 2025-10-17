@@ -1,1 +1,41 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"medicoai-65160","appId":"1:436937306861:android:cf85ca7fe1d649e85752e4","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"medicoai-65160","appId":"1:436937306861:ios:2c799a1e82ed8c5d5752e4","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"medicoai-65160","appId":"1:436937306861:ios:288a256b6a7d3a285752e4","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"medicoai-65160","configurations":{"android":"1:436937306861:android:cf85ca7fe1d649e85752e4","ios":"1:436937306861:ios:2c799a1e82ed8c5d5752e4","macos":"1:436937306861:ios:288a256b6a7d3a285752e4","web":"1:436937306861:web:a2b31ca2c099c9065752e4","windows":"1:436937306861:web:745e12373506ba865752e4"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "medicoai-65160",
+          "appId": "1:436937306861:android:cf85ca7fe1d649e85752e4",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "medicoai-65160",
+          "appId": "1:436937306861:ios:2c799a1e82ed8c5d5752e4",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "medicoai-65160",
+          "appId": "1:436937306861:ios:288a256b6a7d3a285752e4",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "medicoai-65160",
+          "configurations": {
+            "android": "1:436937306861:android:cf85ca7fe1d649e85752e4",
+            "ios": "1:436937306861:ios:2c799a1e82ed8c5d5752e4",
+            "macos": "1:436937306861:ios:288a256b6a7d3a285752e4",
+            "web": "1:436937306861:web:a2b31ca2c099c9065752e4",
+            "windows": "1:436937306861:web:745e12373506ba865752e4"
+          }
+        }
+      }
+    }
+  }
+}
