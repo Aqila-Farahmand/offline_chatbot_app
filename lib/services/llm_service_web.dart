@@ -6,6 +6,10 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'model_manager.dart';
 
+// --- 1. Import your prompts file ---
+import '../constants/prompts.dart';
+// ------------------------------------
+
 @JS('MediapipeGenai')
 external MediapipeGenai? get _mediapipeGenai;
 
@@ -29,6 +33,16 @@ class LLMService {
   static bool _isInitialized = false;
   static final ModelManager _modelManager = ModelManager();
   static String? _modelAssetPath; // e.g. assets/models/xxx.task
+
+  // --- 2. Add the system prompt logic ---
+  static String _systemPrompt = kMedicoAISystemPrompt;
+  static String get currentPromptLabel => kMedicoAIPromptLabel;
+
+  /// Updates the system prompt used by the LLM.
+  static void setSystemPrompt(String newPrompt) {
+    print('Updating system prompt to: "$newPrompt"');
+    _systemPrompt = newPrompt;
+  }
 
   static Future<void> initialize() async {
     if (_isInitialized) return;
@@ -66,7 +80,11 @@ class LLMService {
     if (mp == null) {
       throw Exception('MediapipeGenai JS bridge not found.');
     }
-    final result = await mp.generate(prompt).toDart;
+
+    // --- 3. Format the prompt before sending it to the JS side ---
+    final formattedPrompt = '$_systemPrompt\n\nUser: $prompt\nAssistant:';
+
+    final result = await mp.generate(formattedPrompt).toDart; // Use the formatted prompt
     return result?.toString() ?? '';
   }
 
