@@ -15,9 +15,6 @@ class AdminLogsScreen extends StatelessWidget {
     // 1. list of allowed email addresses
     const allowedEmails = ['aqela.af@gmail.com', 'matteo.magnini00@gmail.com'];
 
-    // 2. list of allowed domains
-    const allowedDomains = ['@uniurb.it', '@gmail.com'];
-
     // 3. list of specific UIDs
     const allowedUids = [
       'RjUAlHp2LCY0TybQrsNuL9avEyA3',
@@ -25,10 +22,8 @@ class AdminLogsScreen extends StatelessWidget {
     ];
 
     // 4. Return true if the user's email is an exact match for an allowed email,
-    //    OR if the user's email ends with an allowed domain.
-    return allowedEmails.contains(email) ||
-        allowedDomains.any(email.endsWith) ||
-        allowedUids.contains(user.uid);
+    //    OR if the user's id is an exact match for an allowed uid.
+    return allowedEmails.contains(email) || allowedUids.contains(user.uid);
   }
 
   String _rowToCsv(Map<String, dynamic> d) {
