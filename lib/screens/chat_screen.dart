@@ -13,11 +13,9 @@ class ChatScreen extends StatelessWidget {
   bool _isAdmin(User? user) {
     if (user == null) return false;
     final email = user.email ?? '';
-    const allowedDomain = '@gmail.com';
-    const allowedUids = 'aqela.af@gmail.com';{
-      // Add specific admin UIDs here if needed
-    }
-    return allowedUids.contains(user.uid) || email.endsWith(allowedDomain);
+    const allowedEmails = 'aqela.af@gmail.com';
+    const allowedUids = 'RjUAlHp2LCY0TybQrsNuL9avEyA3';
+    return allowedUids.contains(user.uid) || email.endsWith(allowedEmails);
   }
 
   @override
