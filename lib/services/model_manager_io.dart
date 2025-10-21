@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../utils/bundle_utils.dart';
 import '../models/llm_model.dart';
+import '../constants/paths.dart';
 
 class ModelManager extends ChangeNotifier {
   static final ModelManager _instance = ModelManager._internal();
@@ -41,7 +42,7 @@ class ModelManager extends ChangeNotifier {
 
       for (final assetPath in manifestMap.keys) {
         final isModelAsset =
-            assetPath.startsWith('assets/models/') &&
+            assetPath.startsWith(AppPaths.modelPaths) &&
             (assetPath.endsWith('.gguf') || assetPath.endsWith('.task'));
         if (isModelAsset) {
           final filename = assetPath.split('/').last;
