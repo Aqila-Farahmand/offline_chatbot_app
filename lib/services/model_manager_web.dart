@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/llm_model.dart';
+import '../constants/paths.dart';
 
-/// Web-safe ModelManager: lists bundled assets under assets/models and allows
-/// selecting a model. No filesystem writes or downloads.
 class ModelManager extends ChangeNotifier {
   static final ModelManager _instance = ModelManager._internal();
   factory ModelManager() => _instance;
@@ -29,10 +28,11 @@ class ModelManager extends ChangeNotifier {
     try {
       final manifestContent = await rootBundle.loadString('AssetManifest.json');
       final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
+      final String modelPath = AppPaths.modelPaths;
 
       final modelAssetPaths = manifestMap.keys.where(
         (assetPath) =>
-            assetPath.startsWith('assets/models/') &&
+            assetPath.startsWith(modelPath) &&
             (assetPath.endsWith('.gguf') || assetPath.endsWith('.task')),
       );
 

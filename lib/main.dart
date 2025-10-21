@@ -14,8 +14,6 @@ import 'screens/admin_logs_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Ensure an authenticated context (anonymous) so Firestore write rules can allow logging
   try {
     if (FirebaseAuth.instance.currentUser == null) {
       await FirebaseAuth.instance.signInAnonymously();
@@ -142,10 +140,10 @@ void printProviderProfiles() {
   if (user == null) return; // not signed in
 
   for (final providerProfile in user.providerData) {
-    final providerId = providerProfile.providerId; // e.g. google.com
-    final uid = providerProfile.uid; // provider-specific UID
-    final name = providerProfile.displayName; // may be null
-    final email = providerProfile.email; // may be null
+    final providerId = providerProfile.providerId;
+    final uid = providerProfile.uid;
+    final name = providerProfile.displayName;
+    final email = providerProfile.email;
     debugPrint('[$providerId] uid=$uid  name=$name  email=$email');
   }
 }

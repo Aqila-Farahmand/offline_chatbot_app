@@ -67,7 +67,7 @@ class LLMService {
           print('MediaPipe LLM initialized successfully');
         } else {
           throw Exception(
-            'MediaPipe .task model not found. Please push a .task model to /data/local/tmp/llm or add one to assets/models/.',
+            'MediaPipe .task model not found. Please download a .task model to /data/local/tmp/llm or add one to assets/models/.',
           );
         }
       } else {
@@ -113,7 +113,7 @@ class LLMService {
     if (!_isInitialized) {
       throw Exception('LLM not initialized. Please initialize first.');
     }
-    // This formatting now uses the _systemPrompt, which is loaded from the constants file.
+    // TODO: MODIFY-> This formatting now uses the _systemPrompt, which is loaded from the constants file.
     final formattedPrompt = '$_systemPrompt\n\nUser: $prompt\nAssistant:';
 
     if (Platform.isAndroid) {
@@ -170,7 +170,7 @@ class LLMService {
             '--ctx_size',
             '2048',
             '-n',
-            '512',
+            '1280',
           ],
           environment: {
             'DYLD_LIBRARY_PATH':
