@@ -9,18 +9,10 @@ class LLMService {
   static String? _modelPath;
   static String? _llamaCliPath;
   static final ModelManager _modelManager = ModelManager();
-  // Use the constant from prompts.dart as the default prompt
-  static String _systemPrompt = kMedicoAISystemPrompt;
   static bool _isMediaPipe = false;
 
   // --- Add a getter to access the current prompt label if needed ---
   static String get currentPromptLabel => kMedicoAIPromptLabel;
-
-  /// Updates the system prompt used by the LLM.
-  static void setSystemPrompt(String newPrompt) {
-    print('Updating system prompt to: "$newPrompt"');
-    _systemPrompt = newPrompt;
-  }
 
   static Future<void> initialize() async {
     if (_isInitialized) {
@@ -113,9 +105,6 @@ class LLMService {
     if (!_isInitialized) {
       throw Exception('LLM not initialized. Please initialize first.');
     }
-    // TODO: MODIFY-> This formatting now uses the _systemPrompt, which is loaded from the constants file.
-    final formattedPrompt = '$_systemPrompt\n\nUser: $prompt\nAssistant:';
-
     if (Platform.isAndroid) {
       try {
         if (!_isMediaPipe) {

@@ -29,11 +29,49 @@ class _ModelSelectorState extends State<ModelSelector> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (!kIsWeb)
-              ExpansionTile(
-                title: const Text('Download models'),
-                initiallyExpanded: true,
-                children: [
+            ExpansionTile(
+              title: const Text('Download models'),
+              initiallyExpanded: true,
+              children: [
+                if (kIsWeb) ...[
+                  // Web-specific models
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0,
+                        vertical: 6.0,
+                      ),
+                      child: Text(
+                        'Web Models (Cached)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  for (final entry
+                      in ModelDownloader.availableModels.entries.where(
+                        (e) =>
+                            e.key.startsWith('web-') &&
+                            e.value.filename.endsWith('.task'),
+                      ))
+                    _DownloadTile(
+                      modelId: entry.key,
+                      info: entry.value,
+                      onDownloaded: () async {
+                        await modelManager.rescanModels();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Downloaded ${entry.value.name}'),
+                          ),
+                        );
+                      },
+                    ),
+                ] else ...[
                   // Desktop (.gguf)
                   Align(
                     alignment: Alignment.centerLeft,
@@ -106,13 +144,14 @@ class _ModelSelectorState extends State<ModelSelector> {
                       },
                     ),
                 ],
-              ),
+              ],
+            ),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Text(
                 kIsWeb
-                    ? 'Tip: Web preview – local downloads not supported; select a bundled asset if available.'
+                    ? 'Tip: Web models are cached in browser storage. Download models to use them offline.'
                     : 'Tip: On Android, select a .task model (MediaPipe). On desktop, select a .gguf model.',
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../widgets/model_selector.dart';
+import '../widgets/max_tokens_selector.dart';
 import '../evaluation/experiment_runner.dart';
 import '../services/llm_service.dart';
+import '../constants/prompts.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -53,6 +55,28 @@ class SettingsScreen extends StatelessWidget {
                 child: const Padding(
                   padding: EdgeInsets.all(20.0),
                   child: ModelSelector(),
+                ),
+              ),
+              const SizedBox(height: 32),
+              _buildSectionHeader(
+                context,
+                'Model Configuration',
+                Icons.tune_outlined,
+                'Configure model parameters and behavior',
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.12),
+                    width: 1,
+                  ),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: MaxTokensSelector(),
                 ),
               ),
               const SizedBox(height: 32),
@@ -202,17 +226,16 @@ class SettingsScreen extends StatelessWidget {
       }
       final outputCsv = '${outDir.path}/questions_experiment.csv';
 
-      // Define simple prompt variants
+      // Use prompt specifications from constants
       final prompts = <PromptSpec>[
         const PromptSpec(
           label: 'baseline',
           template:
               'You are a helpful assistant. Answer concisely.\n\nQuestion: {question}\nAnswer:',
         ),
-        const PromptSpec(
-          label: 'medical_safety',
-          template:
-              'You are a medical information assistant. Provide general, non-diagnostic information, and encourage consulting a doctor for personal advice.\n\nQuestion: {question}\nAnswer:',
+        PromptSpec(
+          label: kMedicoAIPromptLabel,
+          template: '$kMedicoAISystemPrompt\n\nQuestion: {question}\nAnswer:',
         ),
       ];
 

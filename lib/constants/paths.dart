@@ -8,7 +8,7 @@ class AppPaths {
   static const String gemma3WebModel = '${modelPaths}gemma3-1b-it-int8-web.task';
 
   // Example of another asset path, if needed
-  static const String tasksModulePath = 'assets/mediapipe/genai_bundle.mjs';
-  static const String wasmBasePath = 'assets/mediapipe/wasm/';
+  static const String tasksModulePath = '/assets/mediapipe/genai_bundle.mjs';
+  static const String wasmBasePath = '/assets/mediapipe/wasm/';
 
 }

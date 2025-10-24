@@ -15,10 +15,18 @@ class ChatHistoryRemoteLogger {
   }) async {
     try {
       final user = _auth.currentUser;
+      if (user == null) {
+        print('ChatHistoryRemoteLogger error: No authenticated user.');
+        return;
+      }
+
+      // Debugging logs for user information
+      print('ChatHistoryRemoteLogger: Attempting to log data for user UID: ${user.uid}, Email: ${user.email}');
+
       final ts = timestampIso ?? DateTime.now().toUtc().toIso8601String();
       await _db.collection('chat_logs').add({
         'timestamp_iso': ts,
-        'uid': user?.uid,
+        'uid': user.uid,
         'model_name': modelName,
         'prompt_label': promptLabel,
         'question': userQuestion,
@@ -27,7 +35,6 @@ class ChatHistoryRemoteLogger {
         'platform': 'flutter',
       });
     } catch (e) {
-      // ignore: avoid_print
       print('ChatHistoryRemoteLogger error: $e');
     }
   }

@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 import '../utils/bundle_utils.dart';
 
 class ModelDownloader {
@@ -63,6 +66,25 @@ class ModelDownloader {
       description: 'MediaPipe .task smaller model for Android',
       contextSize: 2048,
     ),
+    // Web-specific models (smaller, optimized for browser)
+    'web-gemma-2b-task': ModelInfo(
+      name: 'Web: Gemma 2B (task)',
+      filename: 'gemma-2b-it-int4-web.task',
+      size: 1200000000, // ~1.2GB
+      url:
+          'https://storage.googleapis.com/mediapipe-tasks/text/gemma2b_it_int4.task',
+      description: 'MediaPipe .task optimized for web browsers',
+      contextSize: 2048,
+    ),
+    'web-qwen-0_5b-task': ModelInfo(
+      name: 'Web: Qwen 0.5B (task)',
+      filename: 'qwen-0_5b-it-int4-web.task',
+      size: 600000000, // ~0.6GB
+      url:
+          'https://storage.googleapis.com/mediapipe-tasks/text/qwen0_5b_it_int4.task',
+      description: 'Small MediaPipe .task for web browsers',
+      contextSize: 2048,
+    ),
   };
 
   static Future<void> downloadModel({
@@ -72,58 +94,128 @@ class ModelDownloader {
     required Function(String) onError,
   }) async {
     try {
-      if (kIsWeb) {
-        onError('Downloading models is not supported on web');
-        return;
-      }
       final modelInfo = availableModels[modelId];
       if (modelInfo == null) {
         onError('Model not found');
         return;
       }
 
-      final modelsDirPath = await BundleUtils.getModelsDirectory();
-      final modelsDir = Directory(modelsDirPath);
-      if (!await modelsDir.exists()) {
-        await modelsDir.create(recursive: true);
+      if (kIsWeb) {
+        await _downloadModelWeb(modelInfo, onProgress, onComplete, onError);
+      } else {
+        await _downloadModelNative(modelInfo, onProgress, onComplete, onError);
       }
+    } catch (e) {
+      onError(e.toString());
+    }
+  }
 
-      final file = File('${modelsDir.path}/${modelInfo.filename}');
-      if (await file.exists()) {
-        onError('Model already exists');
+  static Future<void> _downloadModelNative(
+    ModelInfo modelInfo,
+    Function(double) onProgress,
+    Function() onComplete,
+    Function(String) onError,
+  ) async {
+    final modelsDirPath = await BundleUtils.getModelsDirectory();
+    final modelsDir = Directory(modelsDirPath);
+    if (!await modelsDir.exists()) {
+      await modelsDir.create(recursive: true);
+    }
+
+    final file = File('${modelsDir.path}/${modelInfo.filename}');
+    if (await file.exists()) {
+      onError('Model already exists');
+      return;
+    }
+
+    final response = await http.Client().send(
+      http.Request('GET', Uri.parse(modelInfo.url)),
+    );
+
+    final totalBytes = response.contentLength ?? modelInfo.size;
+    var receivedBytes = 0;
+
+    final sink = file.openWrite();
+    await response.stream
+        .listen(
+          (chunk) {
+            sink.add(chunk);
+            receivedBytes += chunk.length;
+            final progress = receivedBytes / totalBytes;
+            onProgress(progress);
+          },
+          onDone: () async {
+            await sink.close();
+            onComplete();
+          },
+          onError: (error) {
+            sink.close();
+            file.deleteSync();
+            onError(error.toString());
+          },
+          cancelOnError: true,
+        )
+        .asFuture(); // Convert StreamSubscription to Future
+  }
+
+  static Future<void> _downloadModelWeb(
+    ModelInfo modelInfo,
+    Function(double) onProgress,
+    Function() onComplete,
+    Function(String) onError,
+  ) async {
+    try {
+      // Check if model already exists in cache
+      final cache = await web.window.caches.open('model-cache').toDart;
+      final cachePath = 'assets/models/${modelInfo.filename}';
+      final existingResponse = await cache.match(cachePath.toJS).toDart;
+
+      if (existingResponse != null) {
+        onError('Model already exists in cache');
         return;
       }
 
-      final response = await http.Client().send(
-        http.Request('GET', Uri.parse(modelInfo.url)),
+      // Stream download for progress tracking
+      final request = http.Request('GET', Uri.parse(modelInfo.url));
+      final streamedResponse = await http.Client().send(request);
+
+      if (streamedResponse.statusCode != 200) {
+        throw Exception(
+          'Failed to download model: ${streamedResponse.statusCode}',
+        );
+      }
+
+      final contentLength = streamedResponse.contentLength ?? modelInfo.size;
+      List<int> bytes = [];
+
+      // Read response in chunks to track progress
+      await for (final chunk in streamedResponse.stream) {
+        bytes.addAll(chunk);
+        if (contentLength > 0) {
+          final progress = bytes.length / contentLength;
+          onProgress(progress);
+        }
+      }
+
+      // Convert List<int> to Uint8List for ArrayBuffer/Blob creation
+      final Uint8List downloadedData = Uint8List.fromList(bytes);
+
+      // Create a web.Response object to store in the Cache API
+      final web.Response cacheResponse = web.Response(
+        downloadedData
+            .toJS, // Convert Uint8List to JavaScript's JSAny for the body
+        web.ResponseInit(status: 200, statusText: 'OK'),
       );
 
-      final totalBytes = response.contentLength ?? modelInfo.size;
-      var receivedBytes = 0;
+      // Create a web.Request object from the path for the key
+      final web.Request cacheKeyRequest = web.Request(cachePath.toJS);
 
-      final sink = file.openWrite();
-      await response.stream
-          .listen(
-            (chunk) {
-              sink.add(chunk);
-              receivedBytes += chunk.length;
-              final progress = receivedBytes / totalBytes;
-              onProgress(progress);
-            },
-            onDone: () async {
-              await sink.close();
-              onComplete();
-            },
-            onError: (error) {
-              sink.close();
-              file.deleteSync();
-              onError(error.toString());
-            },
-            cancelOnError: true,
-          )
-          .asFuture(); // Convert StreamSubscription to Future
+      // Use the web.Request object as the key and the cacheResponse as the value
+      cache.put(cacheKeyRequest, cacheResponse);
+
+      onComplete();
     } catch (e) {
-      onError(e.toString());
+      onError('Web download failed: $e');
     }
   }
 }
