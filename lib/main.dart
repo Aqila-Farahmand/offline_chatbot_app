@@ -14,14 +14,6 @@ import 'screens/admin_logs_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  try {
-    if (FirebaseAuth.instance.currentUser == null) {
-      await FirebaseAuth.instance.signInAnonymously();
-    }
-  } catch (e) {
-    debugPrint('Anonymous sign-in failed: $e');
-  }
-
   // Listen for authentication state changes and print the user UID when available.
   FirebaseAuth.instance.authStateChanges().listen((User? user) {
     if (user != null) {

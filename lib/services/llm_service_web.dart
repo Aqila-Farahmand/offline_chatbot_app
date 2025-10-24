@@ -1,5 +1,6 @@
 @JS()
 library;
+
 // Web implementation using JS bridge defined in web/mediapipe_text.js
 import 'dart:async';
 import 'dart:js_interop';
@@ -24,6 +25,8 @@ extension type InitOptions._(JSObject o) implements JSObject {
     String modelAssetPath,
     String tasksModulePath,
     String wasmBasePath,
+    bool cpuOnly,
+    int? maxTokens,
   });
 }
 
@@ -31,6 +34,32 @@ class LLMService {
   static bool _isInitialized = false;
   static final ModelManager _modelManager = ModelManager();
   static String? _modelAssetPath = AppPaths.gemma3WebModel;
+  // allow forcing CPU-only initialization
+  static bool preferCpuOnly = false;
+  // max tokens configuration (default to 1280 for web)
+  static int maxTokens = 1280;
+
+  // Last error message (for UI/debugging)
+  static String? lastError;
+
+  static void setCpuOnly(bool value) {
+    preferCpuOnly = value;
+    if (kDebugMode) print('LLMService: setCpuOnly=$value');
+  }
+
+  static void setMaxTokens(int value) {
+    maxTokens = value;
+    if (kDebugMode) print('LLMService: setMaxTokens=$value');
+  }
+
+  /// Public getter to allow UI to query if the service is initialized.
+  static bool get isInitialized => _isInitialized;
+
+  /// Public getter for current model path (may be null if not set).
+  static String? get currentModelPath => _modelAssetPath;
+
+  /// Public getter for last error for debugging.
+  static String? get lastErrorMessage => lastError;
 
   // --- CHAT HISTORY MANAGEMENT ---
   static final List<Map<String, String>> _chatHistory = [];
@@ -59,24 +88,48 @@ class LLMService {
   static Future<void> initialize() async {
     if (_isInitialized) return;
 
-    await _modelManager.initialize();
-    _modelAssetPath = await _modelManager.getSelectedModelPath() ?? AppPaths.gemma3WebModel;
+    try {
+      await _modelManager.initialize();
+      _modelAssetPath =
+          await _modelManager.getSelectedModelPath() ?? AppPaths.gemma3WebModel;
 
-    final mp = _mediapipeGenai;
-    if (mp == null) {
-      throw Exception('MediapipeGenai JS bridge not found.');
-    }
+      // Wait briefly for the JS bridge to be available (module may load async).
+      const int maxWaitMs = 5000;
+      const int intervalMs = 200;
+      int waited = 0;
+      while (_mediapipeGenai == null && waited < maxWaitMs) {
+        if (kDebugMode) {
+          print('Waiting for MediapipeGenai JS bridge... (${waited}ms)');
+        }
+        await Future.delayed(Duration(milliseconds: intervalMs));
+        waited += intervalMs;
+      }
 
-    final options = InitOptions(
-      modelAssetPath: _modelAssetPath!,
-      tasksModulePath: AppPaths.tasksModulePath,
-      wasmBasePath: AppPaths.wasmBasePath,
-    );
+      final mp = _mediapipeGenai;
+      if (mp == null) {
+        lastError = 'MediapipeGenai JS bridge not found.';
+        throw Exception(lastError);
+      }
 
-    await mp.init(options).toDart;
-    _isInitialized = true;
-    if (kDebugMode) {
-      print('LLMService initialized successfully with model: $_modelAssetPath');
+      final options = InitOptions(
+        modelAssetPath: _modelAssetPath!,
+        tasksModulePath: AppPaths.tasksModulePath,
+        wasmBasePath: AppPaths.wasmBasePath,
+        cpuOnly: preferCpuOnly,
+        maxTokens: maxTokens,
+      );
+
+      await mp.init(options).toDart;
+      _isInitialized = true;
+      lastError = null;
+      if (kDebugMode) {
+        print(
+          'LLMService initialized successfully with model: $_modelAssetPath',
+        );
+      }
+    } catch (e) {
+      lastError = e.toString();
+      rethrow;
     }
   }
 
@@ -90,26 +143,29 @@ class LLMService {
 
     // 2. Conversation History & System Prompt
     if (_chatHistory.isEmpty) {
-        // FIRST TURN: Embed System Prompt with User Query
-        final systemAndQuery = '$_systemPrompt\n\n$newUserQuery';
-        // Add the combined instruction using the model's defined prefix/suffix
-        prompt.write('<start_of_turn>user\n$systemAndQuery\n<end_of_turn>\n<start_of_turn>model\n');
-
+      // FIRST TURN: Embed System Prompt with User Query
+      final systemAndQuery = '$_systemPrompt\n\n$newUserQuery';
+      // Add the combined instruction using the model's defined prefix/suffix
+      prompt.write(
+        '<start_of_turn>user\n$systemAndQuery\n<end_of_turn>\n<start_of_turn>model\n',
+      );
     } else {
-        // --- SUBSEQUENT TURNS: History + New Query ---
-        for (final turn in _chatHistory) {
-          // User Turn (Prefix + Query + Suffix/Prefix)
-          prompt.write('<start_of_turn>user\n${turn['user']}\n<end_of_turn>\n');
+      // --- SUBSEQUENT TURNS: History + New Query ---
+      for (final turn in _chatHistory) {
+        // User Turn (Prefix + Query + Suffix/Prefix)
+        prompt.write('<start_of_turn>user\n${turn['user']}\n<end_of_turn>\n');
 
-          // Model Turn (Prefix + Response + Suffix/Prefix)
-          // Note: The model's response already contains the end token if it completed generation
-          // but we still add the full template structure for context consistency.
-          prompt.write('<start_of_turn>model\n${turn['assistant']}\n<end_of_turn>\n');
-        }
-        // Add the NEW query
-        prompt.write('<start_of_turn>user\n$newUserQuery\n<end_of_turn>\n');
-        // Signal the model that it's the assistant's turn to respond
-        prompt.write('<start_of_turn>model\n');
+        // Model Turn (Prefix + Response + Suffix/Prefix)
+        // Note: The model's response already contains the end token if it completed generation
+        // but we still add the full template structure for context consistency.
+        prompt.write(
+          '<start_of_turn>model\n${turn['assistant']}\n<end_of_turn>\n',
+        );
+      }
+      // Add the NEW query
+      prompt.write('<start_of_turn>user\n$newUserQuery\n<end_of_turn>\n');
+      // Signal the model that it's the assistant's turn to respond
+      prompt.write('<start_of_turn>model\n');
     }
 
     return prompt.toString();
@@ -117,32 +173,80 @@ class LLMService {
 
   static Future<String> generateResponse(String prompt) async {
     if (!_isInitialized) {
-      throw Exception('LLM not initialized. Please initialize first.');
+      lastError = 'LLM not initialized. Please initialize first.';
+      throw Exception(lastError);
     }
     final mp = _mediapipeGenai;
     if (mp == null) {
-      throw Exception('MediapipeGenai JS bridge not found.');
+      lastError = 'MediapipeGenai JS bridge not found.';
+      throw Exception(lastError);
+    }
+
+    // Keep history small to avoid exceeding model token limits
+    const int maxHistoryTurns = 3;
+    if (_chatHistory.length > maxHistoryTurns) {
+      _chatHistory.removeRange(0, _chatHistory.length - maxHistoryTurns);
+      if (kDebugMode) {
+        print(
+          'Trimmed chat history to last $maxHistoryTurns turns to avoid token overflow.',
+        );
+      }
     }
 
     // 1. Format the full prompt string
     final formattedPrompt = _formatChatPrompt(prompt);
 
     if (kDebugMode) {
-        print('\n--- FULL PROMPT SENT TO MODEL (FINAL TEMPLATE) ---');
-        print(formattedPrompt);
-        print('--------------------------------------------------');
+      print('\n--- FULL PROMPT SENT TO MODEL (FINAL TEMPLATE) ---');
+      print(formattedPrompt);
+      print('--------------------------------------------------');
     }
-    // 2. Generate the response
-    final fullResult = await mp.generate(formattedPrompt).toDart as String?;
+
+    // 2. Generate the response with retry logic on token-limit errors
+    String? fullResult;
+    try {
+      final jsPromise = mp.generate(formattedPrompt);
+      final dartResult = await jsPromise.toDart;
+      fullResult = dartResult?.toString();
+    } catch (e) {
+      lastError = e.toString();
+      // If the model complains about input length, try truncating history and retry once
+      final errText = e.toString();
+      if (kDebugMode) print('Error from JS generate(): $errText');
+
+      if (errText.contains('Input is too long') ||
+          errText.contains('maxTokens')) {
+        if (kDebugMode) {
+          print(
+            'Detected token-length error. Retrying with cleared history...',
+          );
+        }
+        // Retry with cleared history (one attempt)
+        final backupHistory = List<Map<String, String>>.from(_chatHistory);
+        _chatHistory.clear();
+        try {
+          final retryPrompt = _formatChatPrompt(prompt);
+          final retryResult = await mp.generate(retryPrompt).toDart;
+          fullResult = retryResult?.toString();
+          lastError = null;
+        } catch (e2) {
+          // restore history and rethrow
+          _chatHistory.clear();
+          _chatHistory.addAll(backupHistory);
+          lastError = e2.toString();
+          rethrow;
+        }
+      } else {
+        rethrow;
+      }
+    }
 
     // 3. Extract and Clean the Model's Text
     String cleanResponse = _cleanModelOutput(fullResult ?? '');
     // 4. Update the chat history
-    _chatHistory.add({
-      'user': prompt,
-      'assistant': cleanResponse,
-    });
+    _chatHistory.add({'user': prompt, 'assistant': cleanResponse});
 
+    lastError = null;
     return cleanResponse;
   }
 
@@ -175,5 +279,6 @@ class LLMService {
     _isInitialized = false;
     _modelAssetPath = null;
     _chatHistory.clear();
+    lastError = null;
   }
 }
