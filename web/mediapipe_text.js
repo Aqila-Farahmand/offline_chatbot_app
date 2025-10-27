@@ -4,9 +4,9 @@ import {
   GENAI_BUNDLE_LOCAL_ASSET,
   WASM_BASE_PATH,
   MODEL_ASSET_PATH,
-} from './config/config.js';  // Update path to match web directory structure
+} from './config/config.js';
 
-// Expose a plain object on window.MediapipeGenai with async methods init, generate, dispose
+// Expose a plain object on a window.MediapipeGenai with async methods init, generate, dispose
 window.MediapipeGenai = (function () {
   let llmInference = null;
 
@@ -67,17 +67,14 @@ window.MediapipeGenai = (function () {
       baseOptions: {
         modelAssetPath,
       },
-      decodingConfig: {
-        max_num_tokens: maxTokens,
-        max_seq_length: maxTokens,
-        maxTopK: 5,
-        numOutputCandidates: 1,
-        temperature: 0.1,
-        stopTokens: ["<eos>", "<end_of_turn>", "User:", "\nUser:"],
-      },
-      forceF32: true,
+        maxTokens: 1280,
+        //max_seq_length: 128,
+        //maxTopK: 5,
+        //numOutputCandidates: 1,
+        //temperature: 0.1,
+        //stopTokens: ["<eos>", "<end_of_turn>", "User:", "\nUser:"],
     };
-
+    console.log('Base create options:', baseCreateOptions);
     // If cpuOnly requested, force CPU backend immediately
     if (cpuOnly) {
       baseCreateOptions.executorBackend = 'CPU';

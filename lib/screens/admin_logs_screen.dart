@@ -11,7 +11,7 @@ class AdminLogsScreen extends StatelessWidget {
     if (user == null) return false;
 
     final email = user.email ?? '';
-
+// TODO: move the allowed lists to a secure remote config file or .env variable
     // 1. list of allowed email addresses
     const allowedEmails = ['aqela.af@gmail.com', 'matteo.magnini00@gmail.com'];
 
