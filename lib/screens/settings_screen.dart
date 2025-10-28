@@ -6,7 +6,7 @@ import '../widgets/model_selector.dart';
 import '../widgets/max_tokens_selector.dart';
 import '../evaluation/experiment_runner.dart';
 import '../services/llm_service.dart';
-import '../constants/prompts.dart';
+import '../config/prompt_configs.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -229,13 +229,12 @@ class SettingsScreen extends StatelessWidget {
       // Use prompt specifications from constants
       final prompts = <PromptSpec>[
         const PromptSpec(
-          label: 'baseline',
-          template:
-              'You are a helpful assistant. Answer concisely.\n\nQuestion: {question}\nAnswer:',
+          label: kBaselinePromptLabel,
+          template: kBaselinePrompt,
         ),
         PromptSpec(
-          label: kMedicoAIPromptLabel,
-          template: '$kMedicoAISystemPrompt\n\nQuestion: {question}\nAnswer:',
+          label: kMedicalSafetyPromptLabel,
+          template: '$kMedicalSafetyPrompt\n\nQuestion: {question}\nAnswer:',
         ),
       ];
 

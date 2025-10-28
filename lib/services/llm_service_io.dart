@@ -1,7 +1,7 @@
 import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
-import '../constants/prompts.dart';
+import '../config/prompt_configs.dart';
 import 'mediapipe_android_service.dart';
 
 class LLMService {
@@ -12,7 +12,7 @@ class LLMService {
   static bool _isMediaPipe = false;
 
   // --- Add a getter to access the current prompt label if needed ---
-  static String get currentPromptLabel => kMedicoAIPromptLabel;
+  static String get currentPromptLabel => kMedicalSafetyPromptLabel;
 
   static Future<void> initialize() async {
     if (_isInitialized) {
