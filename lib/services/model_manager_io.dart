@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../utils/bundle_utils.dart';
 import '../models/llm_model.dart';
-import '../constants/paths.dart';
+import '../config/path_configs.dart';
 
 class ModelManager extends ChangeNotifier {
   static final ModelManager _instance = ModelManager._internal();

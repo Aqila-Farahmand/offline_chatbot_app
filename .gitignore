@@ -1,6 +1,14 @@
 evaluation/analysis/*.png
 evaluation/analysis/*.pdf
 
+# Secrets
+keys.json
+lib/config/firebase/
+lib/config/admin_config.dart
+
+
+
+
 # Miscellaneous
 *.class
 *.log

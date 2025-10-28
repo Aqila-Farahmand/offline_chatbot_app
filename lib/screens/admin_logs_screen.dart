@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../utils/csv_download.dart';
+import '../config/admin_config.dart';
 
 class AdminLogsScreen extends StatelessWidget {
   const AdminLogsScreen({super.key});
@@ -11,19 +12,8 @@ class AdminLogsScreen extends StatelessWidget {
     if (user == null) return false;
 
     final email = user.email ?? '';
-// TODO: move the allowed lists to a secure remote config file or .env variable
-    // 1. list of allowed email addresses
-    const allowedEmails = ['aqela.af@gmail.com', 'matteo.magnini00@gmail.com'];
-
-    // 3. list of specific UIDs
-    const allowedUids = [
-      'RjUAlHp2LCY0TybQrsNuL9avEyA3',
-      '1mTOnYw5kNSlDJAY02htpSLmdS43',
-    ];
-
-    // 4. Return true if the user's email is an exact match for an allowed email,
-    //    OR if the user's id is an exact match for an allowed uid.
-    return allowedEmails.contains(email) || allowedUids.contains(user.uid);
+    return AdminConfig.adminEmails.contains(email) ||
+        AdminConfig.adminUids.contains(user.uid);
   }
 
   String _rowToCsv(Map<String, dynamic> d) {

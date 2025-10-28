@@ -6,6 +6,7 @@ import '../widgets/chat_input.dart';
 import '../widgets/model_selector.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/edit_profile_dialog.dart';
+import '../config/admin_config.dart';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({super.key});
@@ -13,9 +14,8 @@ class ChatScreen extends StatelessWidget {
   bool _isAdmin(User? user) {
     if (user == null) return false;
     final email = user.email ?? '';
-    const allowedEmails = 'aqela.af@gmail.com';
-    const allowedUids = 'RjUAlHp2LCY0TybQrsNuL9avEyA3';
-    return allowedUids.contains(user.uid) || email.endsWith(allowedEmails);
+    return AdminConfig.adminEmails.contains(email) ||
+        AdminConfig.adminUids.contains(user.uid);
   }
 
   @override

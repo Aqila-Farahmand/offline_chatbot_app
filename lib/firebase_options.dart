@@ -3,17 +3,9 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+// import platform specific firebase api keys and other configs
+import 'package:medico_ai/config/firebase/firebase_configs.dart';
 
-/// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -41,48 +33,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAjTzxOYGdAtg4dm4g4nlxjurlQgpntCSg',
-    appId: '1:436937306861:web:a2b31ca2c099c9065752e4',
-    messagingSenderId: '436937306861',
-    projectId: 'medicoai-65160',
-    authDomain: 'medicoai-65160.firebaseapp.com',
-    storageBucket: 'medicoai-65160.firebasestorage.app',
-    measurementId: 'G-STCDF6C7EH',
+    apiKey: WebConfig.apiKey,
+    appId: WebConfig.appId,
+    messagingSenderId: WebConfig.messagingSenderId,
+    projectId: WebConfig.projectId,
+    authDomain: WebConfig.authDomain,
+    storageBucket: WebConfig.storageBucket,
+    measurementId: WebConfig.measurementId,
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBC20RMhT7HUQ9JUheWLouWNKOVEpk_gbg',
-    appId: '1:436937306861:android:cf85ca7fe1d649e85752e4',
-    messagingSenderId: '436937306861',
-    projectId: 'medicoai-65160',
-    storageBucket: 'medicoai-65160.firebasestorage.app',
+    apiKey: AndroidConfig.apiKey,
+    appId: AndroidConfig.appId,
+    messagingSenderId: AndroidConfig.messagingSenderId,
+    projectId: AndroidConfig.projectId,
+    storageBucket: AndroidConfig.storageBucket,
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA4iJVPeDceMSDYeZKk07P-Yb9MXxEGXlw',
-    appId: '1:436937306861:ios:2c799a1e82ed8c5d5752e4',
-    messagingSenderId: '436937306861',
-    projectId: 'medicoai-65160',
-    storageBucket: 'medicoai-65160.firebasestorage.app',
-    iosBundleId: 'com.example.medicoai',
+    apiKey: IosConfig.apiKey,
+    appId: IosConfig.appId,
+    messagingSenderId: IosConfig.messagingSenderId,
+    projectId: IosConfig.projectId,
+    storageBucket: IosConfig.storageBucket,
+    iosBundleId: IosConfig.iosBundleId,
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA4iJVPeDceMSDYeZKk07P-Yb9MXxEGXlw',
-    appId: '1:436937306861:ios:288a256b6a7d3a285752e4',
-    messagingSenderId: '436937306861',
-    projectId: 'medicoai-65160',
-    storageBucket: 'medicoai-65160.firebasestorage.app',
-    iosBundleId: 'it.aqila.farahmand.medicoai.macos',
+    apiKey: MacosConfig.apiKey,
+    appId: MacosConfig.appId,
+    messagingSenderId: MacosConfig.messagingSenderId,
+    projectId: MacosConfig.projectId,
+    storageBucket: MacosConfig.storageBucket,
+    iosBundleId: MacosConfig.iosBundleId,
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAjTzxOYGdAtg4dm4g4nlxjurlQgpntCSg',
-    appId: '1:436937306861:web:745e12373506ba865752e4',
-    messagingSenderId: '436937306861',
-    projectId: 'medicoai-65160',
-    authDomain: 'medicoai-65160.firebaseapp.com',
-    storageBucket: 'medicoai-65160.firebasestorage.app',
-    measurementId: 'G-1ECZKFGSK2',
+    apiKey: WindowsConfig.apiKey,
+    appId: WindowsConfig.appId,
+    messagingSenderId: WindowsConfig.messagingSenderId,
+    projectId: WindowsConfig.projectId,
+    authDomain: WindowsConfig.authDomain,
+    storageBucket: WindowsConfig.storageBucket,
+    measurementId: WindowsConfig.measurementId,
   );
 }

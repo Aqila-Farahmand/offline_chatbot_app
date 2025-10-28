@@ -4,9 +4,9 @@ library;
 // Web implementation using JS bridge defined in web/mediapipe_text.js
 import 'dart:async';
 import 'dart:js_interop';
-import '../constants/paths.dart';
+import '../config/path_configs.dart';
 import 'model_manager.dart';
-import '../constants/prompts.dart';
+import '../config/prompt_configs.dart';
 import 'package:flutter/foundation.dart';
 
 @JS('MediapipeGenai')
@@ -65,8 +65,8 @@ class LLMService {
   static final List<Map<String, String>> _chatHistory = [];
 
   // System prompt logic
-  static String _systemPrompt = kMedicoAISystemPrompt;
-  static String get currentPromptLabel => kMedicoAIPromptLabel;
+  static String _systemPrompt = kMedicalSafetyPrompt;
+  static String get currentPromptLabel => kMedicalSafetyPromptLabel;
 
   /// Updates the system prompt used by the LLM.
   static void setSystemPrompt(String newPrompt) {
@@ -199,7 +199,6 @@ class LLMService {
     if (kDebugMode) {
       print('\n--- FULL PROMPT SENT TO MODEL (FINAL TEMPLATE) ---');
       print(formattedPrompt);
-      print('--------------------------------------------------');
     }
 
     // 2. Generate the response with retry logic on token-limit errors
