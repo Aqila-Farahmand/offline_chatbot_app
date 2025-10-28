@@ -196,11 +196,6 @@ class LLMService {
     // 1. Format the full prompt string
     final formattedPrompt = _formatChatPrompt(prompt);
 
-    if (kDebugMode) {
-      print('\n--- FULL PROMPT SENT TO MODEL (FINAL TEMPLATE) ---');
-      print(formattedPrompt);
-    }
-
     // 2. Generate the response with retry logic on token-limit errors
     String? fullResult;
     try {
