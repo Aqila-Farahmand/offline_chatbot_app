@@ -84,12 +84,14 @@ class AppState extends ChangeNotifier {
         modelName: modelName,
         userQuestion: message,
         modelResponse: response,
+        promptLabel: LLMService.currentPromptLabel,
         responseTimeMs: responseTimeMs,
       );
       await ChatHistoryRemoteLogger.logModelEvalRemote(
         modelName: modelName,
         userQuestion: message,
         modelResponse: response,
+        promptLabel: LLMService.currentPromptLabel,
         responseTimeMs: responseTimeMs,
       );
 

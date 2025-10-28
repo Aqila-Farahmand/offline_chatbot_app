@@ -41,7 +41,7 @@ Future<void> logModelEvalImpl({
   required String userQuestion,
   required String modelResponse,
   required int responseTimeMs,
-  String promptLabel = 'default',
+  required String promptLabel,
   String? timestampIso,
 }) async {
   try {

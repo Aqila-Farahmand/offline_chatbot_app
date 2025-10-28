@@ -134,7 +134,7 @@ class LLMService {
   }
 
   /// Formats the chat history and new query using the
-  /// EXACT prompt template specified by the model's configuration.
+
   static String _formatChatPrompt(String newUserQuery) {
     final StringBuffer prompt = StringBuffer();
 
@@ -252,7 +252,7 @@ class LLMService {
   /// Cleans the raw output string from the model.
   static String _cleanModelOutput(String rawOutput) {
     // The generation *should* start immediately after the last token: <start_of_turn>model\n
-    // We clean up any potential trailing template tokens the model might have generated.
+    // clean up any potential trailing template tokens the model might have generated.
 
     // Strip the start-of-sequence token if the model accidentally included it in the output
     rawOutput = rawOutput.replaceAll('<bos>', '').trim();
