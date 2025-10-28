@@ -10,7 +10,8 @@ class ChatHistoryRemoteLogger {
     required String userQuestion,
     required String modelResponse,
     required int responseTimeMs,
-    String promptLabel = 'default',
+    required String promptLabel,
+    // String promptLabel = 'default',
     String? timestampIso,
   }) async {
     try {
@@ -19,9 +20,6 @@ class ChatHistoryRemoteLogger {
         print('ChatHistoryRemoteLogger error: No authenticated user.');
         return;
       }
-
-      // Debugging logs for user information
-      print('ChatHistoryRemoteLogger: Attempting to log data for user UID: ${user.uid}, Email: ${user.email}');
 
       final ts = timestampIso ?? DateTime.now().toUtc().toIso8601String();
       await _db.collection('chat_logs').add({
