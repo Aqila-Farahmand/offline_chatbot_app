@@ -1,7 +1,7 @@
 # MedicoAI – Offline Chatbot App
 
-MedicoAI is a cross-platform Flutter application that runs a Large Language Model **completely on-device**.  
-It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g., remote clinics, airplanes, or poor-connectivity environments).
+MedicoAI is a cross-platform Flutter application that runs a large language model **completely on-device**.  
+It offers an AI-powered chat experience **without requiring an internet connection**, making it ideal for private or offline scenarios (e.g., remote clinics, airplanes, or environments with poor connectivity).
 
 **Disclaimer:** MedicoAI is **not** a substitute for professional medical advice, diagnosis, or treatment. Always consult a qualified health-care provider with any questions you may have.
 
@@ -10,7 +10,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 ## Features
 
 - **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) (desktop) or MediaPipe (mobile and web).
-- **Multi-platform:** Android, iOS, macOS and web (desktop & mobile).  
+- **Multi-platform:** Android, iOS, macOS, and web (desktop & mobile).  
 - **Model manager** – detect, add, and switch between local `.gguf` models.
 - **Firebase authentication** (email / Google) to sync profiles while keeping inference on-device.
 - Modern Flutter UI with **Material 3** styling, dark mode, and responsive layouts.
@@ -24,7 +24,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 | -------- | ---------- | ------------ | --------------------------------------- |
 | Desktop  | llama.cpp  | .gguf        | Native binaries required per OS         |
 | Mobile   | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
-| Web      | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
+| Web      | MediaPipe  | .task (model's name with -web suffix) | Uses `com.google.mediapipe:tasks-genai` |
 
 ---
 
@@ -34,12 +34,12 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 lib/
 ├── main.dart               # App entry-point & routing
 ├── screens/                # UI screens (chat, login)
-├── services/               # LLM model handeling (LLMService, ModelManager, ...)
+├── services/               # LLM model handling (LLMService, ModelManager, ...)
 ├── widgets/                # Re-usable UI components
 ├── utils/                  # Helper utilities
-└── models/ & constants/    # Data models and constants
-macos/ | desktop / | web/   # Device runner sources & llama binaries
-assets/models/              # Pre-bundled .gguf and .task models
+└── models/ & config/    # Data models and configs
+macos/ | android / | web/   # Device runner sources
+assets/models/              # Pre-bundled .gguf or .task llm models
 ```
 
 ---
@@ -197,8 +197,8 @@ flutter build ios --release
 # macOS
 flutter build macos --release
 
-# Windows
-flutter build windows --release
+# web
+flutter build chrome --release
 ```
 
 > Make sure the `llama-cli` executable and its accompanying libraries are
