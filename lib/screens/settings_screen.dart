@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import '../widgets/model_selector.dart';
 import '../widgets/max_tokens_selector.dart';
 import '../evaluation/experiment_runner.dart';
 import '../services/llm_service.dart';
 import '../config/prompt_configs.dart';
+import '../config/admin_config.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  bool _isAdmin(User? user) {
+    if (user == null) return false;
+
+    final email = user.email ?? '';
+    return AdminConfig.adminEmails.contains(email) ||
+        AdminConfig.adminUids.contains(user.uid);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,111 +40,123 @@ class SettingsScreen extends StatelessWidget {
         surfaceTintColor: colorScheme.surfaceTint,
         iconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionHeader(
-                context,
-                'AI Model',
-                Icons.psychology_outlined,
-                'Select and manage your AI models',
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.12),
-                    width: 1,
+      body: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, authSnap) {
+          final user = authSnap.data;
+          final isAdmin = _isAdmin(user);
+
+          return SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionHeader(
+                    context,
+                    'AI Model',
+                    Icons.psychology_outlined,
+                    'Select and manage your AI models',
                   ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: ModelSelector(),
-                ),
-              ),
-              const SizedBox(height: 32),
-              _buildSectionHeader(
-                context,
-                'Model Configuration',
-                Icons.tune_outlined,
-                'Configure model parameters and behavior',
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: MaxTokensSelector(),
-                ),
-              ),
-              const SizedBox(height: 32),
-              _buildSectionHeader(
-                context,
-                'Evaluation',
-                Icons.science_outlined,
-                'Run experiments and evaluate model performance',
-              ),
-              const SizedBox(height: 16),
-              Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.12),
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Run Questions Experiment',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.12),
+                        width: 1,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Execute the questions.csv experiment to evaluate model performance across different prompts.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
+                    child: const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: ModelSelector(),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader(
+                    context,
+                    'Model Configuration',
+                    Icons.tune_outlined,
+                    'Configure model parameters and behavior',
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outline.withValues(alpha: 0.12),
+                        width: 1,
                       ),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: MaxTokensSelector(),
+                    ),
+                  ),
+                  if (isAdmin) ...[
+                    const SizedBox(height: 32),
+                    _buildSectionHeader(
+                      context,
+                      'Evaluation',
+                      Icons.science_outlined,
+                      'Run experiments and evaluate model performance',
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () => _runExperiment(context),
-                        icon: const Icon(Icons.play_arrow, size: 20),
-                        label: const Text('Run Experiment'),
-                        style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.12),
+                          width: 1,
                         ),
+                      ),
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Run Questions Experiment',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Execute the questions.csv experiment to evaluate model performance across different prompts.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant,
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: () => _runExperiment(context),
+                              icon: const Icon(Icons.play_arrow, size: 20),
+                              label: const Text('Run Experiment'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -218,13 +240,14 @@ class SettingsScreen extends StatelessWidget {
         'evaluation/dataset/questions.csv',
       );
 
-      // Prepare output path under app support dir
-      final appSupport = await getApplicationSupportDirectory();
-      final outDir = Directory('${appSupport.path}/evaluation/results');
-      if (!await outDir.exists()) {
-        await outDir.create(recursive: true);
+      // Prepare output path - only needed for non-web platforms
+      String? outputCsv;
+      if (!kIsWeb) {
+        final appSupport = await getApplicationSupportDirectory();
+        // Build path string - directory creation will be handled by IO implementation
+        outputCsv =
+            '${appSupport.path}/evaluation/results/questions_experiment.csv';
       }
-      final outputCsv = '${outDir.path}/questions_experiment.csv';
 
       // Use prompt specifications from constants
       final prompts = <PromptSpec>[
@@ -239,8 +262,9 @@ class SettingsScreen extends StatelessWidget {
       ];
 
       await LLMService.initialize();
+      String resultPath;
       try {
-        await runLLMExperimentFromCsvString(
+        resultPath = await runLLMExperimentFromCsvString(
           csvContent: csvContent,
           prompts: prompts,
           outputCsvPath: outputCsv,
@@ -253,7 +277,11 @@ class SettingsScreen extends StatelessWidget {
 
       scaffold.showSnackBar(
         SnackBar(
-          content: Text('Experiment completed. Results saved to $outputCsv'),
+          content: Text(
+            kIsWeb
+                ? 'Experiment completed. Results downloaded as $resultPath'
+                : 'Experiment completed. Results saved to $resultPath',
+          ),
           backgroundColor: colorScheme.primary,
           behavior: SnackBarBehavior.floating,
         ),
