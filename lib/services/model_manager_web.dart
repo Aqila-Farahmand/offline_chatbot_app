@@ -35,11 +35,13 @@ class ModelManager extends ChangeNotifier {
       final Map<String, dynamic> manifestMap = jsonDecode(manifestContent);
       final String modelPath = AppPaths.modelPaths;
 
-      // Get bundled model paths
+      // Get bundled model paths (include .litertlm for web)
       final modelAssetPaths = manifestMap.keys.where(
         (assetPath) =>
             assetPath.startsWith(modelPath) &&
-            (assetPath.endsWith('.gguf') || assetPath.endsWith('.task')),
+            (assetPath.endsWith('.gguf') ||
+                assetPath.endsWith('.task') ||
+                assetPath.endsWith('.litertlm')),
       );
 
       // Check Cache API for downloaded models
@@ -52,7 +54,12 @@ class ModelManager extends ChangeNotifier {
           final List<web.Request> keysList = keys.toDart;
           cachedModelPaths = keysList
               .map((request) => request.url)
-              .where((key) => key.endsWith('.gguf') || key.endsWith('.task'))
+              .where(
+                (key) =>
+                    key.endsWith('.gguf') ||
+                    key.endsWith('.task') ||
+                    key.endsWith('.litertlm'),
+              )
               .toList();
         } catch (e) {
           debugPrint('Error checking cache: $e');
@@ -66,8 +73,10 @@ class ModelManager extends ChangeNotifier {
         final filename = assetPath.split('/').last;
         final modelName = filename
             .replaceAll('.gguf', '')
-            .replaceAll('.task', '');
-        final isTask = filename.endsWith('.task');
+            .replaceAll('.task', '')
+            .replaceAll('.litertlm', '');
+        final isTask =
+            filename.endsWith('.task') || filename.endsWith('.litertlm');
         _availableModels.add(
           LLMModel(
             name: modelName,
@@ -87,8 +96,10 @@ class ModelManager extends ChangeNotifier {
         if (!_availableModels.any((m) => m.filename == filename)) {
           final modelName = filename
               .replaceAll('.gguf', '')
-              .replaceAll('.task', '');
-          final isTask = filename.endsWith('.task');
+              .replaceAll('.task', '')
+              .replaceAll('.litertlm', '');
+          final isTask =
+              filename.endsWith('.task') || filename.endsWith('.litertlm');
           _availableModels.add(
             LLMModel(
               name: modelName,
@@ -103,8 +114,10 @@ class ModelManager extends ChangeNotifier {
         }
       }
 
+      // Automatically select a compatible model for web platform
       if (_availableModels.isNotEmpty) {
-        _selectedModel ??= _availableModels.first;
+        _selectedModel ??= _selectCompatibleModel() ?? _availableModels.first;
+        debugPrint('Auto-selected model for web: ${_selectedModel!.filename}');
       } else {
         _selectedModel = null;
       }
@@ -116,29 +129,80 @@ class ModelManager extends ChangeNotifier {
     }
   }
 
+  /// Select a model compatible with web platform (.task, .litertlm formats)
+  LLMModel? _selectCompatibleModel() {
+    // Web requires .task or .litertlm models (MediaPipe/LiteRT formats)
+    final compatibleModels = _availableModels
+        .where(
+          (model) =>
+              model.filename.endsWith('.task') ||
+              model.filename.endsWith('.litertlm'),
+        )
+        .toList();
+
+    if (compatibleModels.isNotEmpty) {
+      // Prefer downloaded/cached models over bundled
+      final downloaded = compatibleModels
+          .where(
+            (model) =>
+                model.isDownloaded && model.description.contains('Downloaded'),
+          )
+          .toList();
+      if (downloaded.isNotEmpty) {
+        return downloaded.first;
+      }
+      return compatibleModels.first;
+    }
+
+    // If no .task models, return null (will fallback to first model)
+    return null;
+  }
+
   Future<void> rescanModels() async {
+    final previousModel = _selectedModel?.filename;
     await _scanBundledAssets();
+
+    // If the previous model is no longer available or we didn't have one,
+    // auto-select a compatible model
+    if (_selectedModel == null ||
+        !_availableModels.any((m) => m.filename == previousModel)) {
+      _selectedModel =
+          _selectCompatibleModel() ??
+          (_availableModels.isNotEmpty ? _availableModels.first : null);
+      if (_selectedModel != null) {
+        debugPrint(
+          'Auto-selected model after rescan: ${_selectedModel!.filename}',
+        );
+      }
+      notifyListeners();
+    }
   }
 
   Future<String?> getSelectedModelPath() async {
     if (_selectedModel == null) return null;
 
-    // Check cache first for downloaded models
+    // Check cache first for downloaded models (works offline)
     if (kIsWeb) {
       try {
         final cache = await web.window.caches.open('model-cache').toDart;
         final modelPath = 'assets/models/${_selectedModel!.filename}';
-        final response = await cache.match(modelPath.toJS).toDart;
+        // Use Request object to match the cache key format used when storing
+        final cacheKeyRequest = web.Request(modelPath.toJS);
+        final response = await cache.match(cacheKeyRequest).toDart;
         if (response != null) {
-          // Model exists in cache, use cached path
+          // Model exists in cache - can be used offline!
+          debugPrint('Using cached model (offline-capable): $modelPath');
           return modelPath;
+        } else {
+          debugPrint('Model not in cache, will use bundled asset: $modelPath');
         }
       } catch (e) {
-        debugPrint('Error checking cache: $e');
+        debugPrint('Error checking cache (may be offline): $e');
+        // Continue to fallback even if cache check fails (offline scenario)
       }
     }
 
-    // Fall back to bundled asset path
+    // Fall back to bundled asset path (works offline if bundled)
     return 'assets/models/${_selectedModel!.filename}';
   }
 
@@ -201,7 +265,7 @@ class ModelManager extends ChangeNotifier {
       final web.Request cacheKeyRequest = web.Request(cachePath.toJS);
 
       // Use the web.Request object as the key and the cacheResponse as the value
-      cache.put(cacheKeyRequest, cacheResponse);
+      await cache.put(cacheKeyRequest, cacheResponse).toDart;
 
       debugPrint('Model cached successfully: $cachePath');
 
@@ -210,6 +274,18 @@ class ModelManager extends ChangeNotifier {
 
       // Rescan to include the new model
       await rescanModels();
+
+      // Automatically select the newly downloaded model if it's compatible
+      final newModel = _availableModels.firstWhere(
+        (m) => m.filename == filename,
+        orElse: () => _availableModels.first,
+      );
+      if (newModel.filename.endsWith('.task')) {
+        selectModel(newModel);
+        debugPrint(
+          'Auto-selected newly downloaded model: ${newModel.filename}',
+        );
+      }
     } catch (e) {
       debugPrint('Error downloading/caching model: $e');
       _downloadProgress = 0.0;

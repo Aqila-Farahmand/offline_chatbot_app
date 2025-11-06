@@ -34,7 +34,7 @@ class _ModelSelectorState extends State<ModelSelector> {
               initiallyExpanded: true,
               children: [
                 if (kIsWeb) ...[
-                  // Web-specific models
+                  // Web-specific models - show all .task models (compatible with web)
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
@@ -43,7 +43,7 @@ class _ModelSelectorState extends State<ModelSelector> {
                         vertical: 6.0,
                       ),
                       child: Text(
-                        'Web Models (Cached)',
+                        'Web Models (.task format)',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -53,11 +53,7 @@ class _ModelSelectorState extends State<ModelSelector> {
                     ),
                   ),
                   for (final entry
-                      in ModelDownloader.availableModels.entries.where(
-                        (e) =>
-                            e.key.startsWith('web-') &&
-                            e.value.filename.endsWith('.task'),
-                      ))
+                      in ModelDownloader.getCompatibleModels().entries)
                     _DownloadTile(
                       modelId: entry.key,
                       info: entry.value,

@@ -128,8 +128,9 @@ class ModelManager extends ChangeNotifier {
             _availableModels.any((m) => m.filename == _selectedModel!.filename);
 
         if (!stillExists) {
-          _selectedModel = _availableModels.first;
-          print('Selected model: ${_selectedModel!.filename}');
+          // Automatically select a compatible model for the platform
+          _selectedModel = _selectCompatibleModel() ?? _availableModels.first;
+          print('Auto-selected model: ${_selectedModel!.filename}');
         }
       }
 
@@ -140,8 +141,56 @@ class ModelManager extends ChangeNotifier {
     }
   }
 
+  /// Select a model compatible with the current platform
+  LLMModel? _selectCompatibleModel() {
+    if (Platform.isAndroid) {
+      // Android requires .task models (MediaPipe format)
+      final compatibleModels = _availableModels
+          .where((model) => model.filename.endsWith('.task'))
+          .toList();
+
+      if (compatibleModels.isNotEmpty) {
+        print(
+          'Found ${compatibleModels.length} Android-compatible .task model(s)',
+        );
+        return compatibleModels.first;
+      }
+      print('Warning: No .task models found for Android platform');
+      return null;
+    } else {
+      // Desktop platforms (macOS, Windows, Linux) require .gguf models
+      final compatibleModels = _availableModels
+          .where((model) => model.filename.endsWith('.gguf'))
+          .toList();
+
+      if (compatibleModels.isNotEmpty) {
+        print(
+          'Found ${compatibleModels.length} desktop-compatible .gguf model(s)',
+        );
+        return compatibleModels.first;
+      }
+      print('Warning: No .gguf models found for desktop platform');
+      return null;
+    }
+  }
+
   Future<void> rescanModels() async {
+    final previousModel = _selectedModel?.filename;
     await _scanDownloadedModels();
+
+    // If the previous model is no longer available or we didn't have one,
+    // auto-select a compatible model
+    if (_selectedModel == null ||
+        !_availableModels.any((m) => m.filename == previousModel)) {
+      _selectedModel = _selectCompatibleModel();
+      if (_selectedModel == null && _availableModels.isNotEmpty) {
+        _selectedModel = _availableModels.first;
+      }
+      if (_selectedModel != null) {
+        print('Auto-selected model after rescan: ${_selectedModel!.filename}');
+      }
+      notifyListeners();
+    }
   }
 
   Future<String?> getSelectedModelPath() async {

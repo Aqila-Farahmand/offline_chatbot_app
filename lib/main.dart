@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/chat_screen.dart';
@@ -13,13 +14,32 @@ import 'screens/admin_logs_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize Firebase with timeout to prevent blocking when offline
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(const Duration(seconds: 10));
+  } on TimeoutException {
+    debugPrint('Firebase initialization timeout - continuing offline');
+    // Continue app startup even if Firebase times out
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e - continuing offline');
+    // Continue app startup even if Firebase fails
+  }
+
   // Listen for authentication state changes and print the user UID when available.
-  FirebaseAuth.instance.authStateChanges().listen((User? user) {
-    if (user != null) {
-      debugPrint('Signed-in user UID: ${user.uid}');
-    }
-  });
+  // This won't block if Firebase isn't initialized
+  try {
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        debugPrint('Signed-in user UID: ${user.uid}');
+      }
+    });
+  } catch (e) {
+    debugPrint('Firebase Auth listener error: $e - continuing offline');
+  }
+
   runApp(const MyApp());
 }
 
@@ -65,17 +85,40 @@ class MyApp extends StatelessWidget {
 class _MainAppRouter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Firebase Auth caches authentication state locally, so authStateChanges()
+    // works offline and emits immediately with cached state.
+    // Only login/signup operations require internet connection.
+    Stream<User?> authStream;
+    try {
+      authStream = FirebaseAuth.instance.authStateChanges();
+    } catch (e) {
+      debugPrint('Firebase Auth error: $e - checking cached user');
+      // If auth stream fails, check for cached currentUser
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        return const ChatScreen();
+      }
+      return const LoginScreen();
+    }
+
+    // Use currentUser as initial data to show cached auth state immediately
+    // This allows offline access for already-authenticated users
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: authStream,
+      initialData: FirebaseAuth.instance.currentUser,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Show loading only briefly while checking auth state
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            snapshot.data == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (snapshot.hasData) {
+        // If user is authenticated (from cache or stream), show chat screen
+        if (snapshot.hasData || snapshot.data != null) {
           return const ChatScreen();
         }
+        // Otherwise show login screen (user needs to login/signup which requires internet)
         return const LoginScreen();
       },
     );
