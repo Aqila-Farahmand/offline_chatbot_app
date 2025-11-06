@@ -9,3 +9,18 @@ const String kBaselinePrompt =
     'You are a helpful assistant. Answer concisely.\n\nQuestion: {question}\nAnswer:';
 
 const String kBaselinePromptLabel = 'baseline';
+
+/// Describes a prompt variant to be tested in the experiment.
+/// [label] is a short identifier for the prompt (e.g., "baseline", "med_safety").
+/// [template] is the text with a `{question}` placeholder that will be replaced
+/// by the dataset question.
+class PromptSpec {
+  final String label;
+  final String template;
+
+  const PromptSpec({required this.label, required this.template});
+
+  String renderForQuestion(String question) {
+    return template.replaceAll('{question}', question);
+  }
+}

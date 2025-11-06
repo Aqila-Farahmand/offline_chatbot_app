@@ -69,7 +69,9 @@ class _ChatInputState extends State<ChatInput> {
                         _isComposing = text.isNotEmpty;
                       });
                     },
-                    onSubmitted: _isComposing ? _handleSubmitted : null,
+                    onSubmitted: _isComposing && !isProcessing
+                        ? _handleSubmitted
+                        : null,
                     decoration: InputDecoration(
                       hintText: isProcessing
                           ? 'Processing...'
@@ -94,6 +96,20 @@ class _ChatInputState extends State<ChatInput> {
                                   _handleSubmitted(_controller.text),
                               tooltip: 'Send message',
                             )
+                          : isProcessing
+                          ? Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                            )
                           : null,
                     ),
                     style: TextStyle(
@@ -101,40 +117,10 @@ class _ChatInputState extends State<ChatInput> {
                       color: colorScheme.onSurface,
                     ),
                     maxLines: null,
-                    textInputAction: TextInputAction.newline,
+                    textInputAction: TextInputAction.send,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              if (_isComposing && !isProcessing)
-                FloatingActionButton(
-                  onPressed: () => _handleSubmitted(_controller.text),
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                  elevation: 0,
-                  child: const Icon(Icons.send, size: 20),
-                )
-              else if (isProcessing)
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
