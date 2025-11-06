@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
@@ -15,12 +16,25 @@ class UserService {
     required String email,
   }) async {
     try {
-      await _firestore.collection('users').doc(uid).set({
-        'name': name,
-        'lastname': lastname,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .set({
+            'name': name,
+            'lastname': lastname,
+            'email': email,
+            'createdAt': FieldValue.serverTimestamp(),
+          })
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException(
+                'Firestore operation timed out - check your internet connection',
+              );
+            },
+          );
+    } on TimeoutException {
+      rethrow;
     } catch (e) {
       print('Error creating user profile: $e');
       rethrow;
@@ -30,7 +44,20 @@ class UserService {
   /// Get user profile by UID
   Future<DocumentSnapshot> getUserProfile(String uid) async {
     try {
-      return await _firestore.collection('users').doc(uid).get();
+      return await _firestore
+          .collection('users')
+          .doc(uid)
+          .get()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException(
+                'Firestore operation timed out - check your internet connection',
+              );
+            },
+          );
+    } on TimeoutException {
+      rethrow;
     } catch (e) {
       print('Error getting user profile: $e');
       rethrow;
@@ -40,7 +67,20 @@ class UserService {
   /// Update user profile fields
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('users').doc(uid).update(data);
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .update(data)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException(
+                'Firestore operation timed out - check your internet connection',
+              );
+            },
+          );
+    } on TimeoutException {
+      rethrow;
     } catch (e) {
       print('Error updating user profile: $e');
       rethrow;

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 
 class ChatHistoryRemoteLogger {
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
@@ -35,22 +37,42 @@ class ChatHistoryRemoteLogger {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        print('ChatHistoryRemoteLogger error: No authenticated user.');
+        print('ChatHistoryRemoteLogger: No authenticated user.');
         return;
       }
 
       final ts = timestampIso ?? DateTime.now().toUtc().toIso8601String();
-      await _db.collection('chat_logs').add({
-        'timestamp_iso': ts,
-        'uid': user.uid,
-        'model_name': modelName,
-        'prompt_label': promptLabel,
-        'question': userQuestion,
-        'response': modelResponse,
-        'response_time_ms': responseTimeMs,
-        'platform': _getPlatform(),
-      });
+
+      // Add timeout to prevent blocking when offline
+      await _db
+          .collection('chat_logs')
+          .add({
+            'timestamp_iso': ts,
+            'uid': user.uid,
+            'model_name': modelName,
+            'prompt_label': promptLabel,
+            'question': userQuestion,
+            'response': modelResponse,
+            'response_time_ms': responseTimeMs,
+            'platform': _getPlatform(),
+          })
+          .timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              print(
+                'ChatHistoryRemoteLogger: Timeout - offline or network issue',
+              );
+              throw TimeoutException(
+                'Firestore write timeout',
+                const Duration(seconds: 5),
+              );
+            },
+          );
+    } on TimeoutException {
+      // Silently handle timeout - app should work offline
+      print('ChatHistoryRemoteLogger: Operation timed out (offline mode)');
     } catch (e) {
+      // Log but don't throw - app should continue working offline
       print('ChatHistoryRemoteLogger error: $e');
     }
   }

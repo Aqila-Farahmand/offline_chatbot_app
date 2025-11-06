@@ -79,24 +79,26 @@ class AppState extends ChangeNotifier {
       stopwatch.stop();
       final responseTimeMs = stopwatch.elapsedMilliseconds;
 
-      // Persist model evaluation info to CSV (local) and Firestore (remote)
-      await ChatHistoryLogger.logModelEval(
-        modelName: modelName,
-        userQuestion: message,
-        modelResponse: response,
-        promptLabel: LLMService.currentPromptLabel,
-        responseTimeMs: responseTimeMs,
-      );
-      await ChatHistoryRemoteLogger.logModelEvalRemote(
-        modelName: modelName,
-        userQuestion: message,
-        modelResponse: response,
-        promptLabel: LLMService.currentPromptLabel,
-        responseTimeMs: responseTimeMs,
-      );
-
-      // Add bot response to chat
+      // Add bot response to chat first (don't wait for logging)
       addMessageToHistory(response, false);
+
+      // Persist model evaluation info to CSV (local) and Firestore (remote)
+      // These are fire-and-forget operations that won't block the UI
+      ChatHistoryLogger.logModelEval(
+        modelName: modelName,
+        userQuestion: message,
+        modelResponse: response,
+        promptLabel: LLMService.currentPromptLabel,
+        responseTimeMs: responseTimeMs,
+      ).catchError((e) => print('Local logging error: $e'));
+
+      ChatHistoryRemoteLogger.logModelEvalRemote(
+        modelName: modelName,
+        userQuestion: message,
+        modelResponse: response,
+        promptLabel: LLMService.currentPromptLabel,
+        responseTimeMs: responseTimeMs,
+      ).catchError((e) => print('Remote logging error: $e'));
     } catch (e) {
       print('Error generating response: $e');
       addMessageToHistory(
