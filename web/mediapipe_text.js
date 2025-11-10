@@ -145,7 +145,7 @@ globalThis.MediapipeGenai = (function () {
   async function init(options) {
     const {
       modelAssetPath = MODEL_ASSET_PATH,
-      tasksModulePath = GENAI_BUNDLE_LOCAL_ASSET,
+      tasksModulePath = GENAI_BUNDLE_PATH,
       wasmBasePath = WASM_BASE_PATH,
       cpuOnly = false,
       maxTokens = 1280,
