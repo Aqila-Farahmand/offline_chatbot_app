@@ -36,10 +36,9 @@ dev_dependencies:
 
 flutter:
   assets:
-    - assets/images/
-    - assets/models/
-    - assets/mediapipe/
-    - assets/mediapipe/wasm/
+    - models/
+    - mediapipe/
+    - mediapipe/wasm/
     # Evaluation datasets
     - evaluation/dataset/questions.csv
   uses-material-design: true

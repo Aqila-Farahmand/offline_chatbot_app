@@ -7,6 +7,8 @@ import 'services/model_manager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/settings_screen.dart';
@@ -20,6 +22,24 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(const Duration(seconds: 10));
+
+    // Configure Firebase to use emulators when running locally (web only)
+    if (kIsWeb && kDebugMode) {
+      try {
+        // Check if we're running on localhost (emulator scenario)
+        final host = Uri.base.host;
+        if (host == '127.0.0.1' || host == 'localhost') {
+          debugPrint('Configuring Firebase to use emulators...');
+          FirebaseFirestore.instance.useFirestoreEmulator('127.0.0.1', 8080);
+          // Note: Auth emulator is typically auto-detected, but you can configure it explicitly if needed
+          debugPrint('Firestore emulator configured: 127.0.0.1:8080');
+        }
+      } catch (e) {
+        debugPrint(
+          'Error configuring emulators (may already be configured): $e',
+        );
+      }
+    }
   } on TimeoutException {
     debugPrint('Firebase initialization timeout - continuing offline');
     // Continue app startup even if Firebase times out

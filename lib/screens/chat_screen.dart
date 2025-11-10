@@ -136,6 +136,108 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: Consumer<AppState>(
               builder: (context, appState, child) {
+                // Show loading state while initializing
+                if (appState.isInitializing) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: colorScheme.primary),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Initializing model...',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Show error state if initialization failed
+                if (!appState.isModelLoaded &&
+                    appState.initializationError != null) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: colorScheme.errorContainer,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: colorScheme.error,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Model Initialization Failed',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                            ),
+                            child: Text(
+                              appState.initializationError!,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          FilledButton.icon(
+                            onPressed: () {
+                              appState.reinitializeModel();
+                            },
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => Dialog(
+                                  backgroundColor: colorScheme.surface,
+                                  surfaceTintColor: colorScheme.surfaceTint,
+                                  child: const SingleChildScrollView(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(24.0),
+                                      child: ModelSelector(),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.settings),
+                            label: const Text('Select Model'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Show model selection prompt if no model is loaded
                 if (!appState.isModelLoaded) {
                   return Center(
                     child: Padding(

@@ -31,19 +31,41 @@
 
   <title>medicoai</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    // Log JavaScript errors for debugging
+    globalThis.addEventListener('error', (event) => {
+      console.error('JavaScript error:', event.error || event.message, event.filename, event.lineno);
+    });
+    globalThis.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+    });
+    // Listen for MediaPipe GenAI status events
+    globalThis.addEventListener('MediapipeGenaiStatus', (event) => {
+      console.log('MediapipeGenai status:', event.detail);
+      if (event.detail.phase === 'init-failed') {
+        console.error('MediapipeGenai initialization failed:', event.detail.error);
+      }
+    });
+  </script>
   <script src="mediapipe_text.js" type="module"></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      globalThis.addEventListener('load', () => {
+        // Try to register custom service worker, but handle 404s gracefully
         navigator.serviceWorker.register('/service_worker.js')
           .then((registration) => {
             console.log('Service Worker registered with scope:', registration.scope);
           })
           .catch((error) => {
-            console.error('Service Worker registration failed:', error);
+            // Only log as warning if it's a 404 (file not found during development)
+            if (error.message && error.message.includes('404')) {
+              console.warn('Service Worker file not found (this is normal if build/web doesn\'t exist yet). Run: flutter build web');
+            } else {
+              console.error('Service Worker registration failed:', error);
+            }
           });
       });
     }

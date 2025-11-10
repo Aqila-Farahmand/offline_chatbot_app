@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import '../config/path_configs.dart';
 
 // Conditional import for dart:io (not available on web)
 import 'model_downloader_stub.dart'
@@ -165,7 +166,7 @@ class ModelDownloader {
     try {
       // Check if model already exists in cache
       final cache = await web.window.caches.open('model-cache').toDart;
-      final cachePath = 'assets/models/${modelInfo.filename}';
+      final cachePath = '${AppPaths.modelPaths}${modelInfo.filename}';
       // Use Request object to match the cache key format used when storing
       final cacheKeyRequest = web.Request(cachePath.toJS);
       final existingResponse = await cache.match(cacheKeyRequest).toDart;

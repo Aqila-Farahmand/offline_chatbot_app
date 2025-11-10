@@ -185,7 +185,7 @@ class ModelManager extends ChangeNotifier {
     if (kIsWeb) {
       try {
         final cache = await web.window.caches.open('model-cache').toDart;
-        final modelPath = 'assets/models/${_selectedModel!.filename}';
+        final modelPath = '${AppPaths.modelPaths}${_selectedModel!.filename}';
         // Use Request object to match the cache key format used when storing
         final cacheKeyRequest = web.Request(modelPath.toJS);
         final response = await cache.match(cacheKeyRequest).toDart;
@@ -203,7 +203,7 @@ class ModelManager extends ChangeNotifier {
     }
 
     // Fall back to bundled asset path (works offline if bundled)
-    return 'assets/models/${_selectedModel!.filename}';
+    return '${AppPaths.modelPaths}${_selectedModel!.filename}';
   }
 
   void selectModel(LLMModel model) {
@@ -259,7 +259,7 @@ class ModelManager extends ChangeNotifier {
       // Store in Cache API
       final cache = await web.window.caches.open('model-cache').toDart;
 
-      final cachePath = 'assets/models/$filename';
+      final cachePath = '${AppPaths.modelPaths}$filename';
 
       // Create a web.Request object from the path for the key
       final web.Request cacheKeyRequest = web.Request(cachePath.toJS);
