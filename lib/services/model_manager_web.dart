@@ -116,10 +116,19 @@ class ModelManager extends ChangeNotifier {
 
       // Automatically select a compatible model for web platform
       if (_availableModels.isNotEmpty) {
-        _selectedModel ??= _selectCompatibleModel() ?? _availableModels.first;
-        debugPrint('Auto-selected model for web: ${_selectedModel!.filename}');
+        _selectedModel ??= _selectCompatibleModel();
+        if (_selectedModel == null) {
+          debugPrint(
+            'Warning: No web-compatible model found. User must manually select a model.',
+          );
+        } else {
+          debugPrint(
+            'Auto-selected model for web: ${_selectedModel!.filename}',
+          );
+        }
       } else {
         _selectedModel = null;
+        debugPrint('Warning: No models available');
       }
 
       notifyListeners();
@@ -130,6 +139,7 @@ class ModelManager extends ChangeNotifier {
   }
 
   /// Select a model compatible with web platform (.task, .litertlm formats)
+  /// Prioritizes web-specific models (with -web.task suffix) over Android models
   LLMModel? _selectCompatibleModel() {
     // Web requires .task or .litertlm models (MediaPipe/LiteRT formats)
     final compatibleModels = _availableModels
@@ -140,22 +150,65 @@ class ModelManager extends ChangeNotifier {
         )
         .toList();
 
-    if (compatibleModels.isNotEmpty) {
-      // Prefer downloaded/cached models over bundled
-      final downloaded = compatibleModels
+    if (compatibleModels.isEmpty) {
+      debugPrint(
+        'Warning: No web-compatible models found (.task or .litertlm)',
+      );
+      return null;
+    }
+
+    // First priority: Web-specific models (with -web.task suffix)
+    final webSpecificModels = compatibleModels
+        .where(
+          (model) =>
+              model.filename.contains('-web.task') ||
+              model.filename.endsWith('-web.litertlm'),
+        )
+        .toList();
+
+    if (webSpecificModels.isNotEmpty) {
+      // Prefer downloaded/cached web models over bundled
+      final downloadedWeb = webSpecificModels
           .where(
             (model) =>
                 model.isDownloaded && model.description.contains('Downloaded'),
           )
           .toList();
-      if (downloaded.isNotEmpty) {
-        return downloaded.first;
+      if (downloadedWeb.isNotEmpty) {
+        debugPrint(
+          'Selected web-specific downloaded model: ${downloadedWeb.first.filename}',
+        );
+        return downloadedWeb.first;
       }
-      return compatibleModels.first;
+      debugPrint(
+        'Selected web-specific bundled model: ${webSpecificModels.first.filename}',
+      );
+      return webSpecificModels.first;
     }
 
-    // If no .task models, return null (will fallback to first model)
-    return null;
+    // Second priority: Other .task/.litertlm models (but warn if they might be Android models)
+    // Prefer downloaded/cached models over bundled
+    final downloaded = compatibleModels
+        .where(
+          (model) =>
+              model.isDownloaded && model.description.contains('Downloaded'),
+        )
+        .toList();
+    if (downloaded.isNotEmpty) {
+      debugPrint(
+        'Warning: No web-specific models found. Using downloaded model: ${downloaded.first.filename}',
+      );
+      return downloaded.first;
+    }
+
+    // Last resort: any compatible model (but warn)
+    debugPrint(
+      'Warning: No web-specific models found. Using bundled model: ${compatibleModels.first.filename}',
+    );
+    debugPrint(
+      'Note: This model may not be optimized for web. Consider using a model with -web.task suffix.',
+    );
+    return compatibleModels.first;
   }
 
   Future<void> rescanModels() async {
@@ -163,15 +216,17 @@ class ModelManager extends ChangeNotifier {
     await _scanBundledAssets();
 
     // If the previous model is no longer available or we didn't have one,
-    // auto-select a compatible model
+    // auto-select a compatible model (prioritizing web-specific models)
     if (_selectedModel == null ||
         !_availableModels.any((m) => m.filename == previousModel)) {
-      _selectedModel =
-          _selectCompatibleModel() ??
-          (_availableModels.isNotEmpty ? _availableModels.first : null);
+      _selectedModel = _selectCompatibleModel();
       if (_selectedModel != null) {
         debugPrint(
           'Auto-selected model after rescan: ${_selectedModel!.filename}',
+        );
+      } else {
+        debugPrint(
+          'Warning: No web-compatible model found after rescan. User must manually select.',
         );
       }
       notifyListeners();
@@ -275,16 +330,28 @@ class ModelManager extends ChangeNotifier {
       // Rescan to include the new model
       await rescanModels();
 
-      // Automatically select the newly downloaded model if it's compatible
+      // Automatically select the newly downloaded model if it's web-compatible
       final newModel = _availableModels.firstWhere(
         (m) => m.filename == filename,
         orElse: () => _availableModels.first,
       );
-      if (newModel.filename.endsWith('.task')) {
-        selectModel(newModel);
-        debugPrint(
-          'Auto-selected newly downloaded model: ${newModel.filename}',
-        );
+      // Only auto-select if it's a web-compatible format
+      if (newModel.filename.endsWith('.task') ||
+          newModel.filename.endsWith('.litertlm')) {
+        // Prefer web-specific models, but allow any compatible model
+        if (_selectedModel == null ||
+            newModel.filename.contains('-web.task') ||
+            newModel.filename.endsWith('-web.litertlm')) {
+          selectModel(newModel);
+          debugPrint(
+            'Auto-selected newly downloaded model: ${newModel.filename}',
+          );
+        } else {
+          debugPrint(
+            'Downloaded model ${newModel.filename} is available but not auto-selected. '
+            'Current selection: ${_selectedModel?.filename}',
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error downloading/caching model: $e');

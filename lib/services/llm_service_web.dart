@@ -90,8 +90,28 @@ class LLMService {
 
     try {
       await _modelManager.initialize();
-      _modelAssetPath =
-          await _modelManager.getSelectedModelPath() ?? AppPaths.gemma3WebModel;
+      
+      // Get the selected model path, ensuring it's web-compatible
+      final selectedPath = await _modelManager.getSelectedModelPath();
+      if (selectedPath == null) {
+        // No model selected - try to use the default web model
+        _modelAssetPath = AppPaths.gemma3WebModel;
+        debugPrint(
+          'Warning: No model selected. Using default web model: $_modelAssetPath',
+        );
+      } else {
+        _modelAssetPath = selectedPath;
+        // Verify it's a web-compatible model (warn if not)
+        if (!_modelAssetPath!.contains('-web.task') &&
+            !_modelAssetPath!.endsWith('-web.litertlm')) {
+          debugPrint(
+            'Warning: Selected model may not be optimized for web: $_modelAssetPath',
+          );
+          debugPrint(
+            'Consider selecting a model with -web.task suffix for better web performance.',
+          );
+        }
+      }
 
       if (kDebugMode) {
         print(

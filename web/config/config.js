@@ -1,12 +1,12 @@
-// Root-relative path to the primary bundle.
-export const GENAI_BUNDLE_ROOT_PATH = '/assets/mediapipe/genai_bundle.mjs';
+// Single canonical path for MediaPipe GenAI bundle (matches path_configs.dart)
+// Flutter web serves assets from /assets/ in both debug and release modes
+export const GENAI_BUNDLE_PATH = '/assets/mediapipe/genai_bundle.mjs';
 
-// Relative path for local assets (useful for specific development/testing setups).
-export const GENAI_BUNDLE_LOCAL_ASSET = './assets/mediapipe/genai_bundle.mjs';
-
+// Single canonical path for WASM base directory (matches path_configs.dart)
 export const WASM_BASE_PATH = '/assets/mediapipe/wasm/';
 
-export const MODEL_ASSET_PATH = './assets/models/gemma3-1b-it-int8-web.task';
+// Single canonical path for model assets (matches path_configs.dart)
+export const MODEL_ASSET_PATH = '/assets/models/';
 
 export const node_modules = {
   '@mediapipe/tasks-genai': './node_modules/@mediapipe/tasks-genai/',

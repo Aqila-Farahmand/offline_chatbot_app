@@ -1,7 +1,6 @@
 // Bridge to MediaPipe Tasks Genai for local inference on web.
 import {
-  GENAI_BUNDLE_ROOT_PATH,
-  GENAI_BUNDLE_LOCAL_ASSET,
+  GENAI_BUNDLE_PATH,
   WASM_BASE_PATH,
   MODEL_ASSET_PATH,
 } from './config/config.js';
@@ -10,7 +9,7 @@ import {
 globalThis.MediapipeGenai = (function () {
   let llmInference = null;
 
-  // Helper function to resolve URL considering base href
+  // Helper function to resolve URL - uses single consistent path resolution
   function resolveModuleUrl(path) {
     // If it's already a full URL, return it
     if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -31,131 +30,86 @@ globalThis.MediapipeGenai = (function () {
     return new URL(path, baseUrl).href;
   }
 
-  // Load the MediaPipe Tasks GenAI module
+  // Load the MediaPipe Tasks GenAI module - uses single path from config
   async function loadTasksModule(tasksModulePath) {
-    // Use config paths only - no hardcoded paths
-    const pathsToTry = [
-      tasksModulePath, // From options
-      GENAI_BUNDLE_ROOT_PATH, // From config
-      GENAI_BUNDLE_LOCAL_ASSET, // From config
-    ];
+    // Use the path from options, or fall back to config default
+    const pathToUse = tasksModulePath || GENAI_BUNDLE_PATH;
     
-    let lastError = null;
-    let lastErrorDetails = null;
-    
-    for (const path of pathsToTry) {
-      try {
-        const moduleUrl = resolveModuleUrl(path);
-        console.log('Attempting to load tasks module from:', path, '-> resolved to:', moduleUrl);
-        
-        try {
-          const response = await fetch(moduleUrl, { method: 'HEAD' });
-          if (!response.ok) {
-            console.warn(`File not accessible at ${moduleUrl}: ${response.status} ${response.statusText}`);
-            lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
-            lastErrorDetails = { path, moduleUrl, status: response.status, statusText: response.statusText };
-            continue;
-          }
-        } catch (error_) {
-          console.warn(`Failed to verify file accessibility at ${moduleUrl}:`, error_);
-        }
-        
-        const tasks = await import(moduleUrl);
-        console.log('Successfully loaded tasks module from:', path);
-        return tasks;
-      } catch (err) {
-        console.warn(`Failed to load from ${path}:`, err);
-        lastError = err;
-        lastErrorDetails = { path, error: err.message || String(err), stack: err.stack };
+    // Normalize path: ensure it starts with /assets/ for consistency
+    let normalizedPath = pathToUse;
+    if (!normalizedPath.startsWith('/assets/')) {
+      if (normalizedPath.startsWith('assets/')) {
+        normalizedPath = `/${normalizedPath}`;
+      } else {
+        normalizedPath = `/assets/${normalizedPath.replace(/^\/?/, '')}`;
       }
     }
     
-    const errorMsg = `Failed to load MediaPipe Tasks Genai module from all attempted paths. Last error: ${lastError?.message || lastError}`;
-    console.error(errorMsg, lastError);
-    console.error('Attempted paths:', pathsToTry);
-    console.error('Last error details:', lastErrorDetails);
-    globalThis.dispatchEvent(new CustomEvent('MediapipeGenaiStatus', { 
-      detail: { 
-        phase: 'init-failed', 
-        error: errorMsg, 
-        attemptedPaths: pathsToTry,
-        lastErrorDetails: lastErrorDetails
-      } 
-    }));
-    throw new Error(errorMsg);
+    const moduleUrl = resolveModuleUrl(normalizedPath);
+    console.log('Loading MediaPipe Tasks module from:', normalizedPath, '-> resolved to:', moduleUrl);
+    
+    try {
+      const tasks = await import(moduleUrl);
+      console.log('Successfully loaded MediaPipe Tasks module');
+      return tasks;
+    } catch (err) {
+      const errorMsg = `Failed to load MediaPipe Tasks Genai module from ${normalizedPath}: ${err.message || err}`;
+      console.error(errorMsg, err);
+      globalThis.dispatchEvent(new CustomEvent('MediapipeGenaiStatus', { 
+        detail: { 
+          phase: 'init-failed', 
+          error: errorMsg,
+          path: normalizedPath,
+          resolvedUrl: moduleUrl
+        } 
+      }));
+      throw new Error(errorMsg);
+    }
   }
 
-  // Resolve WASM base path
+  // Resolve WASM base path - uses single path from config
   async function resolveWasmBasePath(wasmBasePath) {
-    // Use config paths only - no hardcoded paths
-    const wasmPathsToTry = [
-      wasmBasePath, // From options
-      WASM_BASE_PATH, // From config
-    ];
+    // Use the path from options, or fall back to config default
+    const pathToUse = wasmBasePath || WASM_BASE_PATH;
     
-    for (const wasmPath of wasmPathsToTry) {
-      try {
-        const resolvedUrl = resolveModuleUrl(wasmPath);
-        const testUrl = `${resolvedUrl}genai_wasm_internal.js`;
-        const response = await fetch(testUrl, { method: 'HEAD' });
-        if (response.ok) {
-          console.log('WASM base path found at:', resolvedUrl);
-          return resolvedUrl;
-        }
-      } catch (error_) {
-        // Continue to next path
+    // Normalize path: ensure it starts with /assets/ and ends with /
+    let normalizedPath = pathToUse;
+    if (!normalizedPath.startsWith('/assets/')) {
+      if (normalizedPath.startsWith('assets/')) {
+        normalizedPath = `/${normalizedPath}`;
+      } else {
+        normalizedPath = `/assets/${normalizedPath.replace(/^\/?/, '')}`;
       }
     }
     
-    const fallback = resolveModuleUrl(wasmBasePath);
-    console.warn('Using fallback WASM base path:', fallback);
-    return fallback;
+    // Ensure it ends with /
+    if (!normalizedPath.endsWith('/')) {
+      normalizedPath += '/';
+    }
+    
+    const resolvedUrl = resolveModuleUrl(normalizedPath);
+    console.log('Using WASM base path:', normalizedPath, '-> resolved to:', resolvedUrl);
+    return resolvedUrl;
   }
 
-  // Resolve model asset path
+  // Resolve model asset path - uses single path from config
   async function resolveModelAssetPath(modelAssetPath) {
-    // Use config paths and normalize the provided path
-    const normalizedPaths = [
-      modelAssetPath, // Original path from options
-      modelAssetPath.startsWith('/') ? modelAssetPath : `/${modelAssetPath}`, // Absolute version
-    ];
+    // Normalize path: ensure it starts with /assets/
+    let normalizedPath = modelAssetPath;
     
-    // Also try the default model path from config if different
-    if (modelAssetPath !== MODEL_ASSET_PATH) {
-      const configPaths = [
-        MODEL_ASSET_PATH,
-        MODEL_ASSET_PATH.startsWith('/') ? MODEL_ASSET_PATH : `/${MODEL_ASSET_PATH}`,
-      ];
-      normalizedPaths.push(...configPaths);
-    }
-    
-    const modelPathsToTry = normalizedPaths;
-    
-    let modelPathError = null;
-    
-    for (const path of modelPathsToTry) {
-      try {
-        const resolvedUrl = resolveModuleUrl(path);
-        console.log('Checking model path:', path, '-> resolved to:', resolvedUrl);
-        
-        const response = await fetch(resolvedUrl, { method: 'HEAD' });
-        if (response.ok) {
-          console.log('Model file found at:', resolvedUrl);
-          return resolvedUrl;
-        }
-        console.warn(`Model file not accessible at ${resolvedUrl}: ${response.status} ${response.statusText}`);
-      } catch (err) {
-        console.warn(`Failed to verify model path ${path}:`, err);
-        modelPathError = err;
+    if (!normalizedPath.startsWith('/assets/')) {
+      if (normalizedPath.startsWith('assets/')) {
+        normalizedPath = `/${normalizedPath}`;
+      } else if (normalizedPath.startsWith('models/')) {
+        normalizedPath = `/assets/${normalizedPath}`;
+      } else {
+        normalizedPath = `/assets/models/${normalizedPath.replace(/^\/?/, '')}`;
       }
     }
     
-    const errorMsg = `Model file not found. Tried paths: ${modelPathsToTry.join(', ')}. Last error: ${modelPathError?.message || 'Unknown'}`;
-    console.error(errorMsg);
-    globalThis.dispatchEvent(new CustomEvent('MediapipeGenaiStatus', { 
-      detail: { phase: 'init-failed', error: errorMsg, attemptedPaths: modelPathsToTry } 
-    }));
-    throw new Error(errorMsg);
+    const resolvedUrl = resolveModuleUrl(normalizedPath);
+    console.log('Using model path:', normalizedPath, '-> resolved to:', resolvedUrl);
+    return resolvedUrl;
   }
 
   // Create LLM inference with retry logic
