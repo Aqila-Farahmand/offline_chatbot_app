@@ -9,12 +9,16 @@ class AppState extends ChangeNotifier {
   String _currentMessage = '';
   List<Map<String, String>> _chatHistory = [];
   bool _isProcessing = false;
+  String? _initializationError;
+  bool _isInitializing = true;
   final ModelManager _modelManager = ModelManager();
 
   bool get isModelLoaded => _isModelLoaded;
   String get currentMessage => _currentMessage;
   List<Map<String, String>> get chatHistory => _chatHistory;
   bool get isProcessing => _isProcessing;
+  String? get initializationError => _initializationError;
+  bool get isInitializing => _isInitializing;
   ModelManager get modelManager => _modelManager;
 
   AppState() {
@@ -22,20 +26,58 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _initializeModel() async {
+    _isInitializing = true;
+    _initializationError = null;
+    notifyListeners();
+
     try {
       // Initialize model manager first
       await _modelManager.initialize();
 
       // Initialize LLM on all platforms if a model exists
       if (_modelManager.selectedModel != null) {
-        await LLMService.initialize();
-        setModelLoaded(true);
+        debugPrint(
+          'Initializing LLM with model: ${_modelManager.selectedModel!.filename}',
+        );
+        debugPrint(
+          'Available models: ${_modelManager.availableModels.map((m) => m.filename).join(", ")}',
+        );
+        try {
+          await LLMService.initialize();
+          setModelLoaded(true);
+          debugPrint('Model initialized successfully');
+        } catch (llmError) {
+          // Capture LLM-specific errors with more detail
+          final errorMsg = LLMService.lastErrorMessage ?? llmError.toString();
+          _initializationError =
+              'LLM initialization failed: $errorMsg\n\n'
+              'Model: ${_modelManager.selectedModel!.filename}\n'
+              'Check browser console (F12) for detailed errors.';
+          debugPrint('LLM initialization error: $llmError');
+          setModelLoaded(false);
+          rethrow; // Re-throw to be caught by outer catch
+        }
       } else {
+        _initializationError =
+            'No model available. Please select a model from settings.\n\n'
+            'Available models: ${_modelManager.availableModels.length} found.';
+        if (_modelManager.availableModels.isNotEmpty) {
+          _initializationError =
+              '$_initializationError\nModels: ${_modelManager.availableModels.map((m) => m.filename).join(", ")}';
+        }
         setModelLoaded(false);
       }
-    } catch (e) {
-      print('Error initializing model: $e');
+    } catch (e, stackTrace) {
+      debugPrint('Error initializing model: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // Only set generic error if we don't already have a specific one
+      _initializationError ??=
+          'Failed to initialize model: ${e.toString()}\n\n'
+          'Check browser console (F12) for detailed errors.';
       setModelLoaded(false);
+    } finally {
+      _isInitializing = false;
+      notifyListeners();
     }
   }
 
@@ -60,7 +102,12 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> sendMessage(String message) async {
-    if (!_isModelLoaded || message.trim().isEmpty || _isProcessing) return;
+    if (!_isModelLoaded || message.trim().isEmpty || _isProcessing) {
+      if (!_isModelLoaded) {
+        debugPrint('Cannot send message: model not loaded');
+      }
+      return;
+    }
 
     try {
       _isProcessing = true;

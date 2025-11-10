@@ -8,7 +8,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:web": "flutter build web",
+    "serve:firebase": "firebase emulators:start --only hosting",
+    "build:web:serve": "flutter build web && firebase emulators:start --only hosting"
   },
   "keywords": [],
   "author": "",

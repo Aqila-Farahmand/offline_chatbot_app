@@ -10,7 +10,7 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 ## Features
 
 - **Fully offline inference** powered by [llama.cpp](https://github.com/ggerganov/llama.cpp) (desktop) or MediaPipe (mobile and web).
-- **Multi-platform:** Android, iOS, macOS, and web (desktop & mobile).  
+- **Multi-platform:** Android, iOS, macOS, and web (desktop & mobile).
 - **Model manager** – detect, add, and switch between local `.gguf` models.
 - **Firebase authentication** (email / Google) to sync profiles while keeping inference on-device.
 - Modern Flutter UI with **Material 3** styling, dark mode, and responsive layouts.
@@ -20,10 +20,10 @@ It offers an AI-powered chat experience **without requiring an internet connecti
 
 ## Platform Comparison
 
-| Platform | LLM Engine | Model Format | Notes                                   |
-| -------- | ---------- | ------------ | --------------------------------------- |
-| Desktop  | llama.cpp  | .gguf        | Native binaries required per OS         |
-| Mobile   | MediaPipe  | .task        | Uses `com.google.mediapipe:tasks-genai` |
+| Platform | LLM Engine | Model Format                          | Notes                                   |
+| -------- | ---------- | ------------------------------------- | --------------------------------------- |
+| Desktop  | llama.cpp  | .gguf                                 | Native binaries required per OS         |
+| Mobile   | MediaPipe  | .task                                 | Uses `com.google.mediapipe:tasks-genai` |
 | Web      | MediaPipe  | .task (model's name with -web suffix) | Uses `com.google.mediapipe:tasks-genai` |
 
 ---
@@ -198,13 +198,58 @@ flutter build ios --release
 flutter build macos --release
 
 # web
-flutter build chrome --release
+flutter build web --release
 ```
 
 > Make sure the `llama-cli` executable and its accompanying libraries are
-> present in the platform’s `Resources/llama` (copied automatically by
+> present in the platform's `Resources/llama` (copied automatically by
 > `macos/copy_llama_cli.sh` for macOS. Repeat the same pattern for other
 > platforms if necessary.
+
+---
+
+## Testing Firebase Hosting Locally
+
+To test your Flutter web app with Firebase hosting emulator:
+
+1. **Build the Flutter web app:**
+
+   ```bash
+   flutter build web
+   ```
+
+   This creates the `build/web` directory that Firebase hosting serves.
+
+2. **Start Firebase emulators:**
+
+   ```bash
+   firebase emulators:start
+   ```
+
+   Or to start only the hosting emulator:
+
+   ```bash
+   firebase emulators:start --only hosting
+   ```
+
+3. **Access your app:**
+   - The hosting emulator will be available at `http://127.0.0.1:5019` (or the port specified in `firebase.json`)
+   - The Firebase Emulator UI is available at `http://127.0.0.1:4000`
+
+**Quick commands (using npm scripts):**
+
+```bash
+# Build web app
+npm run build:web
+
+# Start Firebase hosting emulator (after building)
+npm run serve:firebase
+
+# Build and serve in one command
+npm run build:web:serve
+```
+
+**Note:** Make sure to rebuild the web app (`flutter build web`) whenever you make changes to your Flutter code, as the Firebase hosting emulator serves the static files from `build/web`.
 
 ---
 

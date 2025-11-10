@@ -11,8 +11,14 @@ class LLMService {
   static final ModelManager _modelManager = ModelManager();
   static bool _isMediaPipe = false;
 
+  // Last error message (for UI/debugging)
+  static String? lastError;
+
   // --- Add a getter to access the current prompt label if needed ---
   static String get currentPromptLabel => kMedicalSafetyPromptLabel;
+
+  /// Public getter for last error for debugging.
+  static String? get lastErrorMessage => lastError;
 
   static Future<void> initialize() async {
     if (_isInitialized) {
@@ -93,6 +99,7 @@ class LLMService {
         print('Using model: $_modelPath');
       }
     } catch (e) {
+      lastError = e.toString();
       print('Error initializing LLM: $e');
       _isInitialized = false;
       _modelPath = null;
@@ -103,7 +110,8 @@ class LLMService {
 
   static Future<String> generateResponse(String prompt) async {
     if (!_isInitialized) {
-      throw Exception('LLM not initialized. Please initialize first.');
+      lastError = 'LLM not initialized. Please initialize first.';
+      throw Exception(lastError);
     }
     if (Platform.isAndroid) {
       try {
@@ -113,6 +121,7 @@ class LLMService {
         print('Generating response using MediaPipe LLM...');
         return await MediapipeAndroidService.generate(prompt);
       } catch (e) {
+        lastError = e.toString();
         print('Error generating response on Android: $e');
         rethrow;
       }
@@ -188,6 +197,7 @@ class LLMService {
 
         return response;
       } catch (e) {
+        lastError = e.toString();
         print('Error generating response with macOS executable: $e');
         rethrow;
       }
@@ -202,5 +212,6 @@ class LLMService {
     _isMediaPipe = false;
     _modelPath = null;
     _llamaCliPath = null;
+    lastError = null;
   }
 }
