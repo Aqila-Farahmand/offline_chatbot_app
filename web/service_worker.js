@@ -1,4 +1,4 @@
-const CACHE_NAME = 'medicoai-cache-v1';
+const CACHE_NAME = 'medicoai-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -21,6 +21,8 @@ self.addEventListener('install', (event) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
+  // Activate updated SW immediately
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -35,13 +37,31 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Take control of uncontrolled clients ASAP
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Serve cached response if available, otherwise fetch from network
-      return response || fetch(event.request);
-    })
-  );
+  const url = new URL(event.request.url);
+  const isCritical = url.pathname.endsWith('.mjs')
+    || url.pathname.endsWith('.js')
+    || url.pathname.endsWith('.wasm');
+
+  // Prefer network for critical assets to avoid stale SW-cached code during dev
+  if (isCritical) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Default: cache-first
+  event.respondWith(caches.match(event.request).then((response) => response || fetch(event.request)));
 });

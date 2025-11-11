@@ -33,6 +33,19 @@ Future<void> main() async {
           FirebaseFirestore.instance.useFirestoreEmulator('127.0.0.1', 8080);
           // Note: Auth emulator is typically auto-detected, but you can configure it explicitly if needed
           debugPrint('Firestore emulator configured: 127.0.0.1:8080');
+          // Prevent persistent auto-login on localhost by using session-only persistence
+          try {
+            await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+            // Ensure no previously persisted user is auto-restored
+            if (FirebaseAuth.instance.currentUser != null) {
+              await FirebaseAuth.instance.signOut();
+            }
+            debugPrint(
+              'Auth persistence set to SESSION and signed out on localhost.',
+            );
+          } catch (e) {
+            debugPrint('Error setting web auth persistence: $e');
+          }
         }
       } catch (e) {
         debugPrint(
