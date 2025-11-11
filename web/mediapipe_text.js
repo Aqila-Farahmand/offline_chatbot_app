@@ -71,8 +71,8 @@ globalThis.MediapipeGenai = (function () {
   async function resolveWasmBasePath(wasmBasePath) {
     // Use the path from options, or fall back to config default
     const pathToUse = wasmBasePath || WASM_BASE_PATH;
-    
-    // Normalize path: ensure it starts with /assets/ and ends with /
+
+    // Normalize path: ensure it starts with /assets/ and has NO trailing slash
     let normalizedPath = pathToUse;
     if (!normalizedPath.startsWith('/assets/')) {
       if (normalizedPath.startsWith('assets/')) {
@@ -81,12 +81,9 @@ globalThis.MediapipeGenai = (function () {
         normalizedPath = `/assets/${normalizedPath.replace(/^\/?/, '')}`;
       }
     }
-    
-    // Ensure it ends with /
-    if (!normalizedPath.endsWith('/')) {
-      normalizedPath += '/';
-    }
-    
+    // Strip any trailing slashes to avoid // in downstream loaders
+    normalizedPath = normalizedPath.replace(/\/+$/, '');
+
     const resolvedUrl = resolveModuleUrl(normalizedPath);
     console.log('Using WASM base path:', normalizedPath, '-> resolved to:', resolvedUrl);
     return resolvedUrl;
