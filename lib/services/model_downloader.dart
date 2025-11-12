@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:web/web.dart' as web;
-import 'dart:js_interop';
-import '../config/path_configs.dart';
+import 'model_storage_web.dart';
 
 // Conditional import for dart:io (not available on web)
 import 'model_downloader_stub.dart'
@@ -164,15 +162,10 @@ class ModelDownloader {
     Function(String) onError,
   ) async {
     try {
-      // Check if model already exists in cache
-      final cache = await web.window.caches.open('model-cache').toDart;
-      final cachePath = '${AppPaths.modelPaths}${modelInfo.filename}';
-      // Use Request object to match the cache key format used when storing
-      final cacheKeyRequest = web.Request(cachePath.toJS);
-      final existingResponse = await cache.match(cacheKeyRequest).toDart;
-
-      if (existingResponse != null) {
-        onError('Model already exists in cache');
+      // Check if model already exists in storage
+      final exists = await ModelStorageWeb.hasModel(modelInfo.filename);
+      if (exists) {
+        onError('Model already exists in storage');
         return;
       }
 
@@ -233,10 +226,14 @@ class ModelDownloader {
             errorStr.contains('SocketException') ||
             errorStr.contains('XMLHttpRequest')) {
           throw Exception(
-            'Network/CORS error: Unable to download from ${modelInfo.url}. '
-            'This may be a CORS issue. HuggingFace CDN should support CORS. '
-            'Please check your internet connection and try again. '
-            'Note: Download requires internet, but once downloaded, models work offline.',
+            'Network/CORS error: Unable to download from ${modelInfo.url}.\n\n'
+            'This may be a CORS (Cross-Origin Resource Sharing) issue. '
+            'Some hosting providers block direct downloads from web browsers.\n\n'
+            'Alternative solutions:\n'
+            '1. Use the "Upload Model" option to manually upload a model file you download externally\n'
+            '2. Download the model from HuggingFace website and upload it using the upload feature\n'
+            '3. Contact your hosting provider about CORS configuration\n\n'
+            'Model URL: ${modelInfo.url}',
           );
         }
         rethrow;
@@ -262,8 +259,8 @@ class ModelDownloader {
             'Please follow these steps:\n'
             '1. Visit https://huggingface.co/join to create a free account (or login at https://huggingface.co/login)\n'
             '2. Accept the model\'s terms of use on its Hugging Face page\n'
-            '3. Generate an access token at https://huggingface.co/settings/tokens\n'
-            '4. Note: For web downloads, you may need to download the model manually from the Hugging Face website\n\n'
+            '3. Download the model file manually from the Hugging Face website\n'
+            '4. Use the "Upload Model" option in this app to upload the downloaded file\n\n'
             'Model page: $modelPageUrl',
           );
         }
@@ -323,25 +320,23 @@ class ModelDownloader {
 
       try {
         print(
-          'Caching model: ${modelInfo.filename} (${(downloadedData.length / 1024 / 1024).toStringAsFixed(2)} MB)',
+          'Storing model: ${modelInfo.filename} (${(downloadedData.length / 1024 / 1024).toStringAsFixed(2)} MB)',
         );
 
-        // Create a web.Response object to store in the Cache API
-        // The Response constructor accepts the body as JSAny (Uint8List.toJS works)
-        final web.Response cacheResponse = web.Response(
-          downloadedData.toJS,
-          web.ResponseInit(status: 200, statusText: 'OK'),
+        // Use the new storage service
+        await ModelStorageWeb.storeModel(
+          filename: modelInfo.filename,
+          data: downloadedData,
         );
 
-        // Use the web.Request object as the key and the cacheResponse as the value
-        await cache.put(cacheKeyRequest, cacheResponse).toDart;
-        print('Model successfully cached: $cachePath');
+        print('Model successfully stored: ${modelInfo.filename}');
       } catch (e) {
-        print('Cache error: $e');
+        print('Storage error: $e');
         throw Exception(
-          'Error caching model: $e. '
-          'The file may be too large for browser cache (${(downloadedData.length / 1024 / 1024).toStringAsFixed(2)} MB). '
-          'Browser cache limits vary by browser.',
+          'Error storing model: $e. '
+          'The file may be too large for browser storage (${(downloadedData.length / 1024 / 1024).toStringAsFixed(2)} MB). '
+          'Browser storage limits vary by browser. Try using a smaller model or clear browser storage.\n\n'
+          'Alternative: Use the "Upload Model" option to upload a smaller model file.',
         );
       }
 

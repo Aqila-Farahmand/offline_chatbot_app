@@ -34,6 +34,50 @@ class _ModelSelectorState extends State<ModelSelector> {
               initiallyExpanded: true,
               children: [
                 if (kIsWeb) ...[
+                  // Upload button for manual uploads
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Upload Model File'),
+                      onPressed: () async {
+                        try {
+                          await modelManager.uploadModel(
+                            onProgress: (progress) {
+                              // Progress is handled by ModelManager
+                            },
+                            onComplete: () {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Model uploaded successfully'),
+                                ),
+                              );
+                            },
+                            onError: (error) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Upload failed: $error'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 5),
+                                ),
+                              );
+                            },
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ),
+                  const Divider(),
                   // Web-specific models - show all .task models (compatible with web)
                   Align(
                     alignment: Alignment.centerLeft,
