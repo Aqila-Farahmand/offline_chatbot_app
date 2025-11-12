@@ -54,8 +54,35 @@ class LLMService {
   }
 
   static void setMaxTokens(int value) {
+    if (value == maxTokens) return; // No change needed
+
     maxTokens = value;
-    if (kDebugMode) print('LLMService: setMaxTokens=$value');
+    if (kDebugMode) {
+      print('LLMService: setMaxTokens=$value');
+      print(
+        'Note: Service must be reinitialized for the change to take effect.',
+      );
+    }
+
+    // If already initialized, mark for reinitialization
+    // The caller should call dispose() and then initialize() to apply the change
+    if (_isInitialized) {
+      if (kDebugMode) {
+        print(
+          'LLMService: Service is already initialized. '
+          'Call dispose() and initialize() to apply new maxTokens setting.',
+        );
+      }
+    }
+  }
+
+  /// Reinitialize the service with current settings (useful after changing maxTokens)
+  static Future<void> reinitialize() async {
+    if (kDebugMode) {
+      print('LLMService: Reinitializing with maxTokens=$maxTokens');
+    }
+    dispose();
+    await initialize();
   }
 
   /// Public getter to allow UI to query if the service is initialized.

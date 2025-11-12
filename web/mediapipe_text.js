@@ -145,7 +145,7 @@ globalThis.MediapipeGenai = (function () {
       tasksModulePath = GENAI_BUNDLE_PATH,
       wasmBasePath = WASM_BASE_PATH,
       cpuOnly = false,
-      maxTokens = 1280,
+      maxTokens = 1280, // Default matches LLMConfig.defaultMaxTokens
     } = options || {};
 
     console.log('Initializing MediapipeGenai with options:', options);
