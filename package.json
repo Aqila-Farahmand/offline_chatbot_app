@@ -11,7 +11,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:web": "flutter build web",
     "serve:firebase": "firebase emulators:start --only hosting",
-    "build:web:serve": "flutter build web && firebase emulators:start --only hosting"
+    "build:web:serve": "flutter build web && firebase emulators:start --only hosting",
+    "deploy:production": "flutter build web && firebase deploy --only hosting",
+    "deploy:preview": "flutter build web && firebase hosting:channel:deploy preview",
+    "deploy:preview:pr": "flutter build web && firebase hosting:channel:deploy pr-$(git rev-parse --short HEAD || echo 'manual')",
+    "deploy:firestore:rules": "firebase deploy --only firestore:rules",
+    "deploy:firestore:indexes": "firebase deploy --only firestore:indexes",
+    "deploy:firestore:all": "firebase deploy --only firestore"
   },
   "keywords": [],
   "author": "",
