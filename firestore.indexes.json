@@ -1,0 +1,16 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "chat_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "timestamp_iso",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
+
