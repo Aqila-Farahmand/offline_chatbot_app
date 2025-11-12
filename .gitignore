@@ -6,6 +6,11 @@ keys.json
 lib/config/firebase/
 lib/config/admin_config.dart
 
+# Firebase native configuration files (contain API keys)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
 
 
 
@@ -81,4 +86,4 @@ logs/
 coverage
 
 # add node related
-.node_modules/
+node_modules/
