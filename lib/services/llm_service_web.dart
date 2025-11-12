@@ -7,6 +7,8 @@ import 'dart:js_interop';
 import '../config/path_configs.dart';
 import 'model_manager.dart';
 import '../config/prompt_configs.dart';
+import '../config/llm_config.dart';
+import '../utils/token_estimator.dart';
 import 'package:flutter/foundation.dart';
 
 @JS('MediapipeGenai')
@@ -37,7 +39,11 @@ class LLMService {
   // allow forcing CPU-only initialization
   static bool preferCpuOnly = false;
   // max tokens configuration (default to 1280 for web)
-  static int maxTokens = 1280;
+  static int maxTokens = LLMConfig.defaultMaxTokens;
+
+  // Track if history was truncated (for user feedback)
+  static bool _historyWasTruncated = false;
+  static bool get historyWasTruncated => _historyWasTruncated;
 
   // Last error message (for UI/debugging)
   static String? lastError;
@@ -90,7 +96,7 @@ class LLMService {
 
     try {
       await _modelManager.initialize();
-      
+
       // Get the selected model path, ensuring it's web-compatible
       final selectedPath = await _modelManager.getSelectedModelPath();
       if (selectedPath == null) {
@@ -234,6 +240,94 @@ class LLMService {
     return prompt.toString();
   }
 
+  /// Smart history truncation with token awareness
+  static void _truncateHistoryIfNeeded(String newQuery) {
+    _historyWasTruncated = false;
+
+    // Hard limit: never exceed max history turns
+    if (_chatHistory.length > LLMConfig.maxHistoryTurns) {
+      final removed = _chatHistory.length - LLMConfig.maxHistoryTurns;
+      _chatHistory.removeRange(0, removed);
+      _historyWasTruncated = true;
+      if (kDebugMode) {
+        print(
+          'Hard limit: Trimmed chat history from ${_chatHistory.length + removed} to ${LLMConfig.maxHistoryTurns} turns.',
+        );
+      }
+    }
+
+    // Estimate tokens for current prompt
+    final queryTokens = TokenEstimator.estimateTokens(newQuery);
+    final systemTokens = TokenEstimator.estimateTokens(_systemPrompt);
+    final availableForHistory = LLMConfig.calculateAvailableHistoryTokens(
+      maxTokens,
+      queryTokens + systemTokens,
+    );
+
+    // Calculate current history tokens
+    int currentHistoryTokens = 0;
+    for (final entry in _chatHistory) {
+      currentHistoryTokens += TokenEstimator.estimateHistoryEntryTokens(entry);
+    }
+
+    // If history exceeds available budget, truncate progressively
+    if (currentHistoryTokens > availableForHistory) {
+      if (kDebugMode) {
+        print(
+          'Token budget exceeded: History uses $currentHistoryTokens tokens, '
+          'but only $availableForHistory available. Truncating...',
+        );
+      }
+
+      // Progressive truncation: reduce history gradually
+      int targetTurns = LLMConfig.preferredHistoryTurns;
+      while (targetTurns >= LLMConfig.minHistoryTurns) {
+        // Calculate tokens for target number of turns
+        int testTokens = 0;
+        final startIndex = _chatHistory.length > targetTurns
+            ? _chatHistory.length - targetTurns
+            : 0;
+
+        for (int i = startIndex; i < _chatHistory.length; i++) {
+          testTokens += TokenEstimator.estimateHistoryEntryTokens(
+            _chatHistory[i],
+          );
+        }
+
+        if (testTokens <= availableForHistory) {
+          // This number of turns fits, use it
+          if (_chatHistory.length > targetTurns) {
+            final removed = _chatHistory.length - targetTurns;
+            _chatHistory.removeRange(0, removed);
+            _historyWasTruncated = true;
+            if (kDebugMode) {
+              print(
+                'Progressive truncation: Reduced history to $targetTurns turns '
+                '($testTokens tokens, within budget of $availableForHistory).',
+              );
+            }
+          }
+          return;
+        }
+
+        // Try with fewer turns
+        targetTurns--;
+      }
+
+      // Last resort: keep only minimum history
+      if (_chatHistory.length > LLMConfig.minHistoryTurns) {
+        final removed = _chatHistory.length - LLMConfig.minHistoryTurns;
+        _chatHistory.removeRange(0, removed);
+        _historyWasTruncated = true;
+        if (kDebugMode) {
+          print(
+            'Minimum truncation: Reduced history to ${LLMConfig.minHistoryTurns} turns.',
+          );
+        }
+      }
+    }
+  }
+
   static Future<String> generateResponse(String prompt) async {
     if (!_isInitialized) {
       lastError = 'LLM not initialized. Please initialize first.';
@@ -245,65 +339,147 @@ class LLMService {
       throw Exception(lastError);
     }
 
-    // Keep history small to avoid exceeding model token limits
-    const int maxHistoryTurns = 3;
-    if (_chatHistory.length > maxHistoryTurns) {
-      _chatHistory.removeRange(0, _chatHistory.length - maxHistoryTurns);
+    // 1. Proactively truncate history based on token estimation
+    _truncateHistoryIfNeeded(prompt);
+
+    // 2. Format the full prompt string
+    String formattedPrompt = _formatChatPrompt(prompt);
+
+    // 3. Final safety check: if prompt is still too long, truncate query
+    final estimatedTokens = TokenEstimator.estimateFormattedPromptTokens(
+      systemPrompt: _systemPrompt,
+      history: _chatHistory,
+      newQuery: prompt,
+    );
+
+    if (estimatedTokens > maxTokens * 0.9) {
+      // 90% threshold
       if (kDebugMode) {
         print(
-          'Trimmed chat history to last $maxHistoryTurns turns to avoid token overflow.',
+          'Warning: Estimated prompt tokens ($estimatedTokens) approaching limit ($maxTokens). '
+          'Truncating user query...',
         );
       }
-    }
-
-    // 1. Format the full prompt string
-    final formattedPrompt = _formatChatPrompt(prompt);
-
-    // 2. Generate the response with retry logic on token-limit errors
-    String? fullResult;
-    try {
-      final jsPromise = mp.generate(formattedPrompt);
-      final dartResult = await jsPromise.toDart;
-      fullResult = dartResult?.toString();
-    } catch (e) {
-      lastError = e.toString();
-      // If the model complains about input length, try truncating history and retry once
-      final errText = e.toString();
-      if (kDebugMode) print('Error from JS generate(): $errText');
-
-      if (errText.contains('Input is too long') ||
-          errText.contains('maxTokens')) {
+      // Truncate the query itself as last resort
+      final maxQueryTokens = LLMConfig.reservedTokensForQuery;
+      final queryTokens = TokenEstimator.estimateTokens(prompt);
+      if (queryTokens > maxQueryTokens) {
+        prompt = TokenEstimator.truncateToTokenLimit(
+          prompt,
+          maxQueryTokens,
+          fromEnd: false,
+        );
+        formattedPrompt = _formatChatPrompt(prompt);
         if (kDebugMode) {
-          print(
-            'Detected token-length error. Retrying with cleared history...',
-          );
+          print('Truncated user query to fit token budget.');
         }
-        // Retry with cleared history (one attempt)
-        final backupHistory = List<Map<String, String>>.from(_chatHistory);
-        _chatHistory.clear();
-        try {
-          final retryPrompt = _formatChatPrompt(prompt);
-          final retryResult = await mp.generate(retryPrompt).toDart;
-          fullResult = retryResult?.toString();
-          lastError = null;
-        } catch (e2) {
-          // restore history and rethrow
-          _chatHistory.clear();
-          _chatHistory.addAll(backupHistory);
-          lastError = e2.toString();
-          rethrow;
-        }
-      } else {
-        rethrow;
       }
     }
 
-    // 3. Extract and Clean the Model's Text
+    // 4. Generate the response with enhanced retry logic
+    String? fullResult;
+    int retryAttempt = 0;
+
+    while (retryAttempt <= LLMConfig.maxRetryAttempts) {
+      try {
+        final jsPromise = mp.generate(formattedPrompt);
+        final dartResult = await jsPromise.toDart;
+        fullResult = dartResult?.toString();
+        lastError = null;
+        break; // Success, exit retry loop
+      } catch (e) {
+        lastError = e.toString();
+        final errText = e.toString();
+
+        if (kDebugMode) {
+          print(
+            'Error from JS generate() (attempt ${retryAttempt + 1}): $errText',
+          );
+        }
+
+        // Check if it's a token limit error
+        final isTokenError =
+            errText.contains('Input is too long') ||
+            errText.contains('maxTokens') ||
+            errText.contains('token') ||
+            errText.contains('context') ||
+            errText.contains('length');
+
+        if (isTokenError && retryAttempt < LLMConfig.maxRetryAttempts) {
+          retryAttempt++;
+
+          if (kDebugMode) {
+            print(
+              'Token limit error detected. Retry attempt $retryAttempt/${LLMConfig.maxRetryAttempts}...',
+            );
+          }
+
+          // Progressive retry strategy
+          if (LLMConfig.clearHistoryOnRetry) {
+            // Clear more history on each retry
+            final turnsToKeep = LLMConfig.minHistoryTurns - (retryAttempt - 1);
+            if (turnsToKeep >= 0 && _chatHistory.length > turnsToKeep) {
+              _chatHistory.removeRange(0, _chatHistory.length - turnsToKeep);
+              _historyWasTruncated = true;
+              if (kDebugMode) {
+                print('Cleared history, keeping $turnsToKeep turns for retry.');
+              }
+            } else {
+              // Last resort: clear all history
+              _chatHistory.clear();
+              _historyWasTruncated = true;
+              if (kDebugMode) {
+                print('Cleared all history for retry.');
+              }
+            }
+          }
+
+          // Reformat prompt with reduced history
+          formattedPrompt = _formatChatPrompt(prompt);
+
+          // Continue to next retry attempt
+          continue;
+        } else {
+          // Not a token error, or max retries reached
+          if (isTokenError && retryAttempt >= LLMConfig.maxRetryAttempts) {
+            // Final fallback: try with no history and truncated query
+            _chatHistory.clear();
+            final truncatedQuery = TokenEstimator.truncateToTokenLimit(
+              prompt,
+              LLMConfig.reservedTokensForQuery,
+              fromEnd: false,
+            );
+            formattedPrompt = _formatChatPrompt(truncatedQuery);
+
+            try {
+              final jsPromise = mp.generate(formattedPrompt);
+              final dartResult = await jsPromise.toDart;
+              fullResult = dartResult?.toString();
+              lastError = null;
+              if (kDebugMode) {
+                print('Final fallback succeeded with truncated query.');
+              }
+              break;
+            } catch (e2) {
+              // Even fallback failed
+              lastError =
+                  'Token limit exceeded. Please try a shorter question or clear the conversation.';
+              rethrow;
+            }
+          } else {
+            // Non-token error, rethrow immediately
+            rethrow;
+          }
+        }
+      }
+    }
+
+    // 5. Extract and Clean the Model's Text
     String cleanResponse = _cleanModelOutput(fullResult ?? '');
-    // 4. Update the chat history
+
+    // 6. Update the chat history
     _chatHistory.add({'user': prompt, 'assistant': cleanResponse});
 
-    lastError = null;
     return cleanResponse;
   }
 
