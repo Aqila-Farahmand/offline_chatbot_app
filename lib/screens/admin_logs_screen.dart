@@ -3,17 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../utils/csv_download.dart';
-import '../config/admin_config.dart';
+import '../config/firebase_config.dart';
+import '../config/app_constants.dart';
 
 class AdminLogsScreen extends StatelessWidget {
   const AdminLogsScreen({super.key});
 
   bool _isAdmin(User? user) {
-    if (user == null) return false;
-
-    final email = user.email ?? '';
-    return AdminConfig.adminEmails.contains(email) ||
-        AdminConfig.adminUids.contains(user.uid);
+    return FirebaseConfig.isAdmin(user);
   }
 
   String _rowToCsv(Map<String, dynamic> d) {
@@ -63,9 +60,9 @@ class AdminLogsScreen extends StatelessWidget {
             return const Center(child: Text('Access denied'));
           }
           final query = FirebaseFirestore.instance
-              .collection('chat_logs')
+              .collection(FirebaseConfig.chatLogsCollection)
               .orderBy('timestamp_iso', descending: true)
-              .limit(1000);
+              .limit(AppConstants.maxChatLogsQueryLimit);
           return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: query.snapshots(),
             builder: (context, snapshot) {

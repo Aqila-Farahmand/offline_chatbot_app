@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../config/app_constants.dart';
+import '../config/firebase_config.dart';
 
 class UserService {
   UserService({FirebaseFirestore? firestore})
@@ -17,7 +19,7 @@ class UserService {
   }) async {
     try {
       await _firestore
-          .collection('users')
+          .collection(FirebaseConfig.usersCollection)
           .doc(uid)
           .set({
             'name': name,
@@ -26,7 +28,7 @@ class UserService {
             'createdAt': FieldValue.serverTimestamp(),
           })
           .timeout(
-            const Duration(seconds: 10),
+            Duration(seconds: AppConstants.firestoreOperationTimeoutSeconds),
             onTimeout: () {
               throw TimeoutException(
                 'Firestore operation timed out - check your internet connection',
@@ -45,11 +47,11 @@ class UserService {
   Future<DocumentSnapshot> getUserProfile(String uid) async {
     try {
       return await _firestore
-          .collection('users')
+          .collection(FirebaseConfig.usersCollection)
           .doc(uid)
           .get()
           .timeout(
-            const Duration(seconds: 10),
+            Duration(seconds: AppConstants.firestoreOperationTimeoutSeconds),
             onTimeout: () {
               throw TimeoutException(
                 'Firestore operation timed out - check your internet connection',
@@ -68,11 +70,11 @@ class UserService {
   Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     try {
       await _firestore
-          .collection('users')
+          .collection(FirebaseConfig.usersCollection)
           .doc(uid)
           .update(data)
           .timeout(
-            const Duration(seconds: 10),
+            Duration(seconds: AppConstants.firestoreOperationTimeoutSeconds),
             onTimeout: () {
               throw TimeoutException(
                 'Firestore operation timed out - check your internet connection',
@@ -89,6 +91,9 @@ class UserService {
 
   /// Listen to user profile changes
   Stream<DocumentSnapshot> listenToUserProfile(String uid) {
-    return _firestore.collection('users').doc(uid).snapshots();
+    return _firestore
+        .collection(FirebaseConfig.usersCollection)
+        .doc(uid)
+        .snapshots();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,10 +12,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/launch');
-    });
+    Future.delayed(
+      Duration(seconds: AppConstants.splashScreenDurationSeconds),
+      () {
+        if (!mounted) return;
+        Navigator.of(context).pushReplacementNamed('/launch');
+      },
+    );
   }
 
   @override
@@ -27,9 +31,9 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             Icon(Icons.medical_services, size: 80, color: Colors.white),
             const SizedBox(height: 24),
-            const Text(
-              'MedicoAI',
-              style: TextStyle(
+            Text(
+              AppConstants.appName,
+              style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

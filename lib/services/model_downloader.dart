@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'model_storage_web.dart';
+import '../config/external_urls.dart';
+import '../config/app_constants.dart';
 
 // Conditional import for dart:io (not available on web)
 import 'model_downloader_stub.dart'
@@ -13,8 +15,7 @@ class ModelDownloader {
       name: 'Gemma 2B',
       filename: 'gemma-2b-q4.gguf',
       size: 2100000000, // ~2.1GB
-      url:
-          'https://huggingface.co/google/gemma-2b-it/resolve/main/gemma-2b-q4.gguf',
+      url: ExternalUrls.gemma2bModelUrl,
       description: 'Smaller, faster model suitable for most tasks',
       contextSize: 8192,
     ),
@@ -23,8 +24,7 @@ class ModelDownloader {
       name: 'TinyLlama 1.1B Chat (Q4_K_M)',
       filename: 'tinyllama-1.1b-chat.Q4_K_M.gguf',
       size: 700000000, // ~0.7GB
-      url:
-          'https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat.Q4_K_M.gguf',
+      url: ExternalUrls.tinyllama11bChatModelUrl,
       description: 'Very small chat model, good for speed and low memory',
       contextSize: 4096,
     ),
@@ -32,8 +32,7 @@ class ModelDownloader {
       name: 'Qwen2.5-1.5B-Instruct',
       filename: 'Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.task',
       size: 1600000000, // ~1.6GB (approx; actual may vary)
-      url:
-          'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.task',
+      url: ExternalUrls.qwen25_15bInstructModelUrl,
       description: 'MediaPipe .task optimized for Android (INT4)',
       contextSize: 2048,
     ),
@@ -42,8 +41,7 @@ class ModelDownloader {
       name: 'Gemma 3N E2B it litert lm',
       filename: 'gemma-3n-E2B-it-int4-Web.litertlm',
       size: 3040000000, // ~3.04GB
-      url:
-          'https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4-Web.litertlm',
+      url: ExternalUrls.gemma3nE2bItLitertLmModelUrl,
       description: 'MediaPipe .task optimized for web browsers',
       contextSize: 2048,
     ),
@@ -189,7 +187,7 @@ class ModelDownloader {
         var response = await client
             .send(request)
             .timeout(
-              const Duration(minutes: 30), // 30 minute timeout for large files
+              Duration(minutes: AppConstants.modelDownloadTimeoutMinutes),
               onTimeout: () {
                 client.close();
                 throw Exception(
@@ -248,16 +246,14 @@ class ModelDownloader {
           // Extract model page URL from the download URL
           final uri = Uri.parse(modelInfo.url);
           final pathParts = uri.pathSegments;
-          String modelPageUrl = 'https://huggingface.co';
-          if (pathParts.length >= 2) {
-            modelPageUrl =
-                'https://huggingface.co/${pathParts[0]}/${pathParts[1]}';
-          }
+          final modelPageUrl = ExternalUrls.getHuggingFaceModelPageUrl(
+            pathParts,
+          );
 
           throw Exception(
             'Authentication Required: This model requires a Hugging Face account to download.\n\n'
             'Please follow these steps:\n'
-            '1. Visit https://huggingface.co/join to create a free account (or login at https://huggingface.co/login)\n'
+            '1. Visit ${ExternalUrls.huggingFaceJoin} to create a free account (or login at ${ExternalUrls.huggingFaceLogin})\n'
             '2. Accept the model\'s terms of use on its Hugging Face page\n'
             '3. Download the model file manually from the Hugging Face website\n'
             '4. Use the "Upload Model" option in this app to upload the downloaded file\n\n'

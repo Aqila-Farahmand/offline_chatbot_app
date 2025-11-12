@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import '../config/app_constants.dart';
+import '../config/firebase_config.dart';
 
 class ChatHistoryRemoteLogger {
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
@@ -45,7 +47,7 @@ class ChatHistoryRemoteLogger {
 
       // Add timeout to prevent blocking when offline
       await _db
-          .collection('chat_logs')
+          .collection(FirebaseConfig.chatLogsCollection)
           .add({
             'timestamp_iso': ts,
             'uid': user.uid,
@@ -57,14 +59,14 @@ class ChatHistoryRemoteLogger {
             'platform': _getPlatform(),
           })
           .timeout(
-            const Duration(seconds: 5),
+            Duration(seconds: AppConstants.chatHistoryLogTimeoutSeconds),
             onTimeout: () {
               print(
                 'ChatHistoryRemoteLogger: Timeout - offline or network issue',
               );
               throw TimeoutException(
                 'Firestore write timeout',
-                const Duration(seconds: 5),
+                Duration(seconds: AppConstants.chatHistoryLogTimeoutSeconds),
               );
             },
           );

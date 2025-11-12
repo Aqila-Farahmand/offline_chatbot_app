@@ -2,6 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper function to check if user is admin
+    // 
+    // IMPORTANT: This function must be kept in sync with FirebaseConfig.isAdmin()
+    // in lib/config/firebase_config.dart. When updating admin emails/UIDs:
+    // 1. Update lib/config/admin_config.dart (source of truth)
+    // 2. Update this function in firestore.rules
+    // 3. The FirebaseConfig.isAdmin() function reads from admin_config.dart
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.email in ['aqela.af@gmail.com', 'matteo.magnini00@gmail.com'] ||
