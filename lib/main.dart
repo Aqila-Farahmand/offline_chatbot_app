@@ -15,6 +15,7 @@ import 'screens/settings_screen.dart';
 import 'screens/admin_logs_screen.dart';
 import 'config/app_constants.dart';
 import 'config/firebase_config.dart';
+import 'utils/chat_history_remote_logger.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,12 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(Duration(seconds: AppConstants.firebaseInitTimeoutSeconds));
+
+    // Enable offline persistence for chat history logging
+    // This allows writes to be queued when offline and synced automatically
+    ChatHistoryRemoteLogger.enableOfflinePersistence().catchError(
+      (e) => debugPrint('Failed to enable offline persistence: $e'),
+    );
 
     // Configure Firebase to use emulators when running locally (web only)
     if (kIsWeb && kDebugMode) {
