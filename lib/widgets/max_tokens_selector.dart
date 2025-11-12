@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/llm_service_web.dart' as web;
+import '../config/llm_config.dart';
 
 class MaxTokensSelector extends StatefulWidget {
   const MaxTokensSelector({super.key});
@@ -10,16 +11,16 @@ class MaxTokensSelector extends StatefulWidget {
 }
 
 class _MaxTokensSelectorState extends State<MaxTokensSelector> {
-  int _currentMaxTokens = 1280;
+  int _currentMaxTokens = LLMConfig.defaultMaxTokens;
   bool _isLoading = false;
 
-  // Common max token values for different model sizes
+  // Common max token values for different model sizes (from LLMConfig)
   final List<int> _maxTokenOptions = [
-    512, // Small models
-    1024, // Medium models
-    1280, // Default for web
-    2048, // Large models
-    4096, // Very large models
+    LLMConfig.maxTokensSmall,
+    LLMConfig.maxTokensMedium,
+    LLMConfig.maxTokensLarge,
+    LLMConfig.maxTokensVeryLarge,
+    LLMConfig.maxTokensExtreme,
   ];
 
   @override
@@ -36,6 +37,7 @@ class _MaxTokensSelectorState extends State<MaxTokensSelector> {
     });
 
     try {
+      // Update the max tokens setting
       web.LLMService.setMaxTokens(newValue);
       _currentMaxTokens = newValue;
 
@@ -43,14 +45,17 @@ class _MaxTokensSelectorState extends State<MaxTokensSelector> {
         print('Max tokens updated to: $newValue');
       }
 
+      // Note: The service needs to be reinitialized for the change to take effect
+      // This is because maxTokens is set during initialization
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Max tokens set to $newValue. Restart the app to apply changes.',
+              'Max tokens set to $newValue. The model will be reinitialized with the new setting.',
             ),
             backgroundColor: Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -171,7 +176,7 @@ class _MaxTokensSelectorState extends State<MaxTokensSelector> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Current setting: $_currentMaxTokens tokens. Changes require app restart.',
+                  'Current setting: $_currentMaxTokens tokens. The model will use this limit for token management and history truncation.',
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onSurfaceVariant,
