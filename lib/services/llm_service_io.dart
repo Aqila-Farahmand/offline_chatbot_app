@@ -2,6 +2,8 @@ import 'dart:io';
 import '../utils/bundle_utils.dart';
 import 'model_manager.dart';
 import '../config/prompt_configs.dart';
+import '../config/llm_config.dart';
+import '../utils/token_estimator.dart';
 import 'mediapipe_android_service.dart';
 
 class LLMService {
@@ -108,18 +110,108 @@ class LLMService {
     }
   }
 
+  // Chat history management (similar to web service)
+  static final List<Map<String, String>> _chatHistory = [];
+
+  /// Smart history truncation with token awareness (similar to web)
+  static void _truncateHistoryIfNeeded(String newQuery) {
+    // Hard limit: never exceed max history turns
+    if (_chatHistory.length > LLMConfig.maxHistoryTurns) {
+      final removed = _chatHistory.length - LLMConfig.maxHistoryTurns;
+      _chatHistory.removeRange(0, removed);
+      print('Trimmed chat history to ${LLMConfig.maxHistoryTurns} turns.');
+    }
+
+    // Estimate tokens and truncate if needed
+    final queryTokens = TokenEstimator.estimateTokens(newQuery);
+    final systemTokens = TokenEstimator.estimateTokens(kMedicalSafetyPrompt);
+    final availableForHistory = LLMConfig.calculateAvailableHistoryTokens(
+      2048, // Default context size for IO (can be made configurable)
+      queryTokens + systemTokens,
+    );
+
+    int currentHistoryTokens = 0;
+    for (final entry in _chatHistory) {
+      currentHistoryTokens += TokenEstimator.estimateHistoryEntryTokens(entry);
+    }
+
+    if (currentHistoryTokens > availableForHistory) {
+      // Progressive truncation
+      int targetTurns = LLMConfig.preferredHistoryTurns;
+      while (targetTurns >= LLMConfig.minHistoryTurns) {
+        int testTokens = 0;
+        final startIndex = _chatHistory.length > targetTurns
+            ? _chatHistory.length - targetTurns
+            : 0;
+
+        for (int i = startIndex; i < _chatHistory.length; i++) {
+          testTokens += TokenEstimator.estimateHistoryEntryTokens(
+            _chatHistory[i],
+          );
+        }
+
+        if (testTokens <= availableForHistory) {
+          if (_chatHistory.length > targetTurns) {
+            _chatHistory.removeRange(0, _chatHistory.length - targetTurns);
+            print(
+              'Progressive truncation: Reduced history to $targetTurns turns.',
+            );
+          }
+          return;
+        }
+        targetTurns--;
+      }
+
+      // Last resort: keep minimum history
+      if (_chatHistory.length > LLMConfig.minHistoryTurns) {
+        _chatHistory.removeRange(
+          0,
+          _chatHistory.length - LLMConfig.minHistoryTurns,
+        );
+        print(
+          'Minimum truncation: Reduced history to ${LLMConfig.minHistoryTurns} turns.',
+        );
+      }
+    }
+  }
+
   static Future<String> generateResponse(String prompt) async {
     if (!_isInitialized) {
       lastError = 'LLM not initialized. Please initialize first.';
       throw Exception(lastError);
     }
+
+    // Proactively truncate history before generating
+    _truncateHistoryIfNeeded(prompt);
+
+    // Format prompt with history (simple format for IO)
+    String formattedPrompt = prompt;
+    if (_chatHistory.isNotEmpty) {
+      final StringBuffer sb = StringBuffer();
+      for (final entry in _chatHistory) {
+        sb.writeln('User: ${entry['user']}');
+        sb.writeln('Assistant: ${entry['assistant']}');
+        sb.writeln();
+      }
+      sb.writeln('User: $prompt');
+      sb.writeln('Assistant:');
+      formattedPrompt = sb.toString();
+    } else {
+      formattedPrompt = '$kMedicalSafetyPrompt\n\nUser: $prompt\nAssistant:';
+    }
+
     if (Platform.isAndroid) {
       try {
         if (!_isMediaPipe) {
           throw Exception('MediaPipe LLM not initialized');
         }
         print('Generating response using MediaPipe LLM...');
-        return await MediapipeAndroidService.generate(prompt);
+        final response = await MediapipeAndroidService.generate(
+          formattedPrompt,
+        );
+        // Update history
+        _chatHistory.add({'user': prompt, 'assistant': response});
+        return response;
       } catch (e) {
         lastError = e.toString();
         print('Error generating response on Android: $e');
@@ -138,10 +230,7 @@ class LLMService {
         final tempDir = await BundleUtils.getTempDirectory();
         print('Using temp directory: $tempDir');
 
-        // Format the prompt for medical context
-        final formattedPrompt = 'User: $prompt\nAssistant:';
-
-        // Create a temporary file for the prompt
+        // Create a temporary file for the prompt (already formatted with history)
         final promptFile = File('$tempDir/prompt.txt');
         await promptFile.writeAsString(formattedPrompt);
         print('Created prompt file at: ${promptFile.path}');
@@ -195,6 +284,9 @@ class LLMService {
 
         await promptFile.delete();
 
+        // Update history
+        _chatHistory.add({'user': prompt, 'assistant': response});
+
         return response;
       } catch (e) {
         lastError = e.toString();
@@ -212,6 +304,13 @@ class LLMService {
     _isMediaPipe = false;
     _modelPath = null;
     _llamaCliPath = null;
+    _chatHistory.clear();
     lastError = null;
+  }
+
+  /// Clears the chat history
+  static void clearHistory() {
+    _chatHistory.clear();
+    print('Chat history cleared.');
   }
 }
