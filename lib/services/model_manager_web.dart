@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:web/web.dart' as web;
-import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import '../models/llm_model.dart';
 import '../config/path_configs.dart';
+import 'model_storage_web.dart';
+import 'model_upload_web.dart';
 
 class ModelManager extends ChangeNotifier {
   static final ModelManager _instance = ModelManager._internal();
@@ -44,25 +43,14 @@ class ModelManager extends ChangeNotifier {
                 assetPath.endsWith('.litertlm')),
       );
 
-      // Check Cache API for downloaded models
+      // Check storage for downloaded models
       List<String> cachedModelPaths = [];
       if (kIsWeb) {
         try {
-          final cache = await web.window.caches.open('model-cache').toDart;
-          final keys = await cache.keys().toDart;
-          // Convert JSArray to Dart List first, then extract URLs
-          final List<web.Request> keysList = keys.toDart;
-          cachedModelPaths = keysList
-              .map((request) => request.url)
-              .where(
-                (key) =>
-                    key.endsWith('.gguf') ||
-                    key.endsWith('.task') ||
-                    key.endsWith('.litertlm'),
-              )
-              .toList();
+          final storedModels = await ModelStorageWeb.listModels();
+          cachedModelPaths = storedModels;
         } catch (e) {
-          debugPrint('Error checking cache: $e');
+          debugPrint('Error checking storage: $e');
         }
       }
 
@@ -236,24 +224,25 @@ class ModelManager extends ChangeNotifier {
   Future<String?> getSelectedModelPath() async {
     if (_selectedModel == null) return null;
 
-    // Check cache first for downloaded models (works offline)
+    // Check storage first for downloaded models (works offline)
     if (kIsWeb) {
       try {
-        final cache = await web.window.caches.open('model-cache').toDart;
-        final modelPath = '${AppPaths.modelPaths}${_selectedModel!.filename}';
-        // Use Request object to match the cache key format used when storing
-        final cacheKeyRequest = web.Request(modelPath.toJS);
-        final response = await cache.match(cacheKeyRequest).toDart;
-        if (response != null) {
-          // Model exists in cache - can be used offline!
-          debugPrint('Using cached model (offline-capable): $modelPath');
+        final exists = await ModelStorageWeb.hasModel(_selectedModel!.filename);
+        if (exists) {
+          // Model exists in storage - can be used offline!
+          final modelPath = ModelStorageWeb.getModelPath(
+            _selectedModel!.filename,
+          );
+          debugPrint('Using stored model (offline-capable): $modelPath');
           return modelPath;
         } else {
-          debugPrint('Model not in cache, will use bundled asset: $modelPath');
+          debugPrint(
+            'Model not in storage, will use bundled asset: ${_selectedModel!.filename}',
+          );
         }
       } catch (e) {
-        debugPrint('Error checking cache (may be offline): $e');
-        // Continue to fallback even if cache check fails (offline scenario)
+        debugPrint('Error checking storage (may be offline): $e');
+        // Continue to fallback even if storage check fails (offline scenario)
       }
     }
 
@@ -268,61 +257,34 @@ class ModelManager extends ChangeNotifier {
     }
   }
 
-  Future<void> addModel(String modelPath) async {
+  /// Upload a model file manually (for web users who download externally)
+  Future<void> uploadModel({
+    required Function(double) onProgress,
+    required Function() onComplete,
+    required Function(String) onError,
+  }) async {
     if (!kIsWeb) {
-      throw UnsupportedError('Web-only implementation');
+      onError('Upload is only available on web platform');
+      return;
     }
 
     _downloadProgress = 0.0;
     notifyListeners();
 
     try {
-      final filename = modelPath.split('/').last;
-
-      // Stream download for progress tracking
-      final request = http.Request('GET', Uri.parse(modelPath));
-      final streamedResponse = await http.Client().send(request);
-
-      if (streamedResponse.statusCode != 200) {
-        throw Exception(
-          'Failed to download model: ${streamedResponse.statusCode}',
-        );
-      }
-
-      final contentLength = streamedResponse.contentLength ?? 0;
-      List<int> bytes = [];
-
-      // Read response in chunks to track progress
-      await for (final chunk in streamedResponse.stream) {
-        bytes.addAll(chunk);
-        if (contentLength > 0) {
-          _downloadProgress = bytes.length / contentLength;
+      final filename = await ModelUploadWeb.uploadModel(
+        onProgress: (progress) {
+          _downloadProgress = progress;
           notifyListeners();
-        }
-      }
-
-      // Convert List<int> to Uint8List for ArrayBuffer/Blob creation
-      final Uint8List downloadedData = Uint8List.fromList(bytes);
-
-      // Create a web.Response object to store in the Cache API
-      final web.Response cacheResponse = web.Response(
-        downloadedData
-            .toJS, // Convert Uint8List to JavaScript's JSAny for the body
-        web.ResponseInit(status: 200, statusText: 'OK'),
+        },
       );
 
-      // Store in Cache API
-      final cache = await web.window.caches.open('model-cache').toDart;
-
-      final cachePath = '${AppPaths.modelPaths}$filename';
-
-      // Create a web.Request object from the path for the key
-      final web.Request cacheKeyRequest = web.Request(cachePath.toJS);
-
-      // Use the web.Request object as the key and the cacheResponse as the value
-      await cache.put(cacheKeyRequest, cacheResponse).toDart;
-
-      debugPrint('Model cached successfully: $cachePath');
+      if (filename == null) {
+        // User cancelled
+        _downloadProgress = 0.0;
+        notifyListeners();
+        return;
+      }
 
       _downloadProgress = 1.0;
       notifyListeners();
@@ -330,7 +292,7 @@ class ModelManager extends ChangeNotifier {
       // Rescan to include the new model
       await rescanModels();
 
-      // Automatically select the newly downloaded model if it's web-compatible
+      // Automatically select the newly uploaded model if it's web-compatible
       final newModel = _availableModels.firstWhere(
         (m) => m.filename == filename,
         orElse: () => _availableModels.first,
@@ -344,20 +306,22 @@ class ModelManager extends ChangeNotifier {
             newModel.filename.endsWith('-web.litertlm')) {
           selectModel(newModel);
           debugPrint(
-            'Auto-selected newly downloaded model: ${newModel.filename}',
+            'Auto-selected newly uploaded model: ${newModel.filename}',
           );
         } else {
           debugPrint(
-            'Downloaded model ${newModel.filename} is available but not auto-selected. '
+            'Uploaded model ${newModel.filename} is available but not auto-selected. '
             'Current selection: ${_selectedModel?.filename}',
           );
         }
       }
+
+      onComplete();
     } catch (e) {
-      debugPrint('Error downloading/caching model: $e');
+      debugPrint('Error uploading model: $e');
       _downloadProgress = 0.0;
       notifyListeners();
-      rethrow;
+      onError('Upload failed: $e');
     }
   }
 }

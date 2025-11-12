@@ -208,6 +208,18 @@ class ModelManager extends ChangeNotifier {
     }
   }
 
+  /// Upload a model file manually (web-only feature)
+  /// On native platforms, models are downloaded directly to file system
+  Future<void> uploadModel({
+    required Function(double) onProgress,
+    required Function() onComplete,
+    required Function(String) onError,
+  }) async {
+    onError(
+      'Upload is only available on web platform. Use the download feature instead.',
+    );
+  }
+
   Future<void> addModel(String modelPath) async {
     try {
       final file = File(modelPath);
