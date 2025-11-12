@@ -8,6 +8,7 @@ import '../evaluation/experiment_runner.dart';
 import '../services/llm_service.dart';
 import '../config/prompt_configs.dart';
 import '../config/admin_config.dart';
+import '../config/app_constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -231,13 +232,13 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           backgroundColor: colorScheme.primary,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: AppConstants.snackbarDurationSeconds),
         ),
       );
 
       // Load the questions CSV from assets (declared in pubspec)
       final csvContent = await rootBundle.loadString(
-        'evaluation/dataset/questions.csv',
+        AppConstants.evaluationDatasetPath,
       );
 
       // Prepare output path - only needed for non-web platforms
@@ -246,7 +247,7 @@ class SettingsScreen extends StatelessWidget {
         final appSupport = await getApplicationSupportDirectory();
         // Build path string - directory creation will be handled by IO implementation
         outputCsv =
-            '${appSupport.path}/evaluation/results/questions_experiment.csv';
+            '${appSupport.path}/${AppConstants.evaluationResultsDir}/${AppConstants.evaluationResultsFilename}';
       }
 
       // Use prompt specifications from constants

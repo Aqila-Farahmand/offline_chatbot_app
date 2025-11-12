@@ -13,6 +13,8 @@ import 'screens/login_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/admin_logs_screen.dart';
+import 'config/app_constants.dart';
+import 'config/firebase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,21 +23,28 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(Duration(seconds: AppConstants.firebaseInitTimeoutSeconds));
 
     // Configure Firebase to use emulators when running locally (web only)
     if (kIsWeb && kDebugMode) {
       try {
         // Check if we're running on localhost (emulator scenario)
         final host = Uri.base.host;
-        if (host == '127.0.0.1' || host == 'localhost') {
+        if (FirebaseConfig.isEmulatorEnvironment(host)) {
           debugPrint('Configuring Firebase to use emulators...');
-          FirebaseFirestore.instance.useFirestoreEmulator('127.0.0.1', 8080);
+          FirebaseFirestore.instance.useFirestoreEmulator(
+            AppConstants.firestoreEmulatorHost,
+            AppConstants.firestoreEmulatorPort,
+          );
           // Note: Auth emulator is typically auto-detected, but you can configure it explicitly if needed
-          debugPrint('Firestore emulator configured: 127.0.0.1:8080');
+          debugPrint(
+            'Firestore emulator configured: ${AppConstants.firestoreEmulatorHost}:${AppConstants.firestoreEmulatorPort}',
+          );
           // Prevent persistent auto-login on localhost by using session-only persistence
           try {
-            await FirebaseAuth.instance.setPersistence(Persistence.SESSION);
+            await FirebaseAuth.instance.setPersistence(
+              FirebaseConfig.emulatorAuthPersistence,
+            );
             // Ensure no previously persisted user is auto-restored
             if (FirebaseAuth.instance.currentUser != null) {
               await FirebaseAuth.instance.signOut();
@@ -87,7 +96,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppState()),
       ],
       child: MaterialApp(
-        title: 'MedicoAI',
+        title: AppConstants.appTitle,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(

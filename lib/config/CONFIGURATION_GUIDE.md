@@ -1,0 +1,138 @@
+# Configuration Guide
+
+This document explains the centralized configuration system used throughout the application. All hardcoded values have been moved to configuration files following software engineering best practices.
+
+## Configuration Files
+
+### Core Configuration
+
+1. **`app_constants.dart`** - Core application constants
+
+   - Firestore collection names
+   - Timeout durations
+   - Emulator configuration
+   - Application metadata
+   - File paths and directories
+   - Query limits
+
+2. **`external_urls.dart`** - External URLs and API endpoints
+
+   - Hugging Face URLs
+   - Model download URLs
+   - Helper methods for URL construction
+
+3. **`firebase_config.dart`** - Firebase-specific configuration
+
+   - Authentication persistence settings
+   - Admin helper functions
+   - Emulator detection
+   - Firestore collection references
+
+4. **`environment_config.dart`** - Environment-based configuration
+   - Development vs Production settings
+   - Timeout multipliers
+   - Log levels
+
+### Existing Configuration Files
+
+5. **`admin_config.dart`** - Admin user configuration
+
+   - Admin emails
+   - Admin UIDs
+
+6. **`path_configs.dart`** - Asset and model paths
+
+   - Model directory paths
+   - MediaPipe paths
+
+7. **`prompt_configs.dart`** - Prompt templates
+   - Medical safety prompts
+   - Baseline prompts
+
+## Usage Examples
+
+### Using Firestore Collection Names
+
+```dart
+import '../config/firebase_config.dart';
+
+// Instead of: .collection('users')
+FirebaseFirestore.instance.collection(FirebaseConfig.usersCollection)
+
+// Instead of: .collection('chat_logs')
+FirebaseFirestore.instance.collection(FirebaseConfig.chatLogsCollection)
+```
+
+### Using Timeout Constants
+
+```dart
+import '../config/app_constants.dart';
+
+// Instead of: Duration(seconds: 10)
+Duration(seconds: AppConstants.firestoreOperationTimeoutSeconds)
+
+// Instead of: Duration(minutes: 30)
+Duration(minutes: AppConstants.modelDownloadTimeoutMinutes)
+```
+
+### Using External URLs
+
+```dart
+import '../config/external_urls.dart';
+
+// Instead of: 'https://huggingface.co/join'
+ExternalUrls.huggingFaceJoin
+
+// Instead of: 'https://huggingface.co/google/gemma-2b-it/resolve/main/gemma-2b-q4.gguf'
+ExternalUrls.gemma2bModelUrl
+```
+
+### Using Admin Functions
+
+```dart
+import '../config/firebase_config.dart';
+
+// Instead of duplicating admin check logic
+if (FirebaseConfig.isAdmin(user)) {
+  // Admin-only code
+}
+```
+
+## Best Practices
+
+1. **Never hardcode values** - Always use constants from configuration files
+2. **Single source of truth** - Each value should be defined in one place only
+3. **Keep Firestore rules in sync** - When updating admin config, update both:
+   - `lib/config/admin_config.dart`
+   - `firestore.rules` (the `isAdmin()` function)
+4. **Use environment config** - For environment-specific values, use `EnvironmentConfig`
+5. **Document changes** - When adding new constants, document them in this guide
+
+## Migration Checklist
+
+When adding new features:
+
+- [ ] Check if constants already exist in config files
+- [ ] Add new constants to appropriate config file
+- [ ] Update all usages to use the constant
+- [ ] Update this guide if adding new configuration categories
+- [ ] Test in both development and production environments
+
+## Firestore Rules Synchronization
+
+The `isAdmin()` function in `firestore.rules` must be manually kept in sync with `FirebaseConfig.isAdmin()` because Firestore rules cannot import Dart code.
+
+**When updating admin users:**
+
+1. Update `lib/config/admin_config.dart`
+2. Update the `isAdmin()` function in `firestore.rules`
+3. The `FirebaseConfig.isAdmin()` function will automatically use the updated `admin_config.dart`
+
+## Environment-Specific Configuration
+
+The `EnvironmentConfig` class automatically detects the environment:
+
+- **Development**: Debug builds, longer timeouts, verbose logging
+- **Production**: Release builds, standard timeouts, minimal logging
+
+You can extend this system to add staging environments or feature flags as needed.

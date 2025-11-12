@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../utils/bundle_utils.dart';
 import 'model_downloader.dart';
+import '../config/external_urls.dart';
+import '../config/app_constants.dart';
 
 class NativeFileOperations {
   static Future<void> downloadModelNative(
@@ -29,7 +31,7 @@ class NativeFileOperations {
         response = await http.Client()
             .send(http.Request('GET', Uri.parse(modelInfo.url)))
             .timeout(
-              const Duration(minutes: 30), // 30 minute timeout for large files
+              Duration(minutes: AppConstants.modelDownloadTimeoutMinutes),
               onTimeout: () {
                 throw Exception(
                   'Download timeout: Model download took too long',
@@ -53,18 +55,16 @@ class NativeFileOperations {
           // Extract model page URL from the download URL
           final uri = Uri.parse(modelInfo.url);
           final pathParts = uri.pathSegments;
-          String modelPageUrl = 'https://huggingface.co';
-          if (pathParts.length >= 2) {
-            modelPageUrl =
-                'https://huggingface.co/${pathParts[0]}/${pathParts[1]}';
-          }
+          final modelPageUrl = ExternalUrls.getHuggingFaceModelPageUrl(
+            pathParts,
+          );
 
           throw Exception(
             'Authentication Required: This model requires a Hugging Face account to download.\n\n'
             'Please follow these steps:\n'
-            '1. Visit https://huggingface.co/join to create a free account (or login at https://huggingface.co/login)\n'
+            '1. Visit ${ExternalUrls.huggingFaceJoin} to create a free account (or login at ${ExternalUrls.huggingFaceLogin})\n'
             '2. Accept the model\'s terms of use on its Hugging Face page\n'
-            '3. Generate an access token at https://huggingface.co/settings/tokens\n'
+            '3. Generate an access token at ${ExternalUrls.huggingFaceSettingsTokens}\n'
             '4. You may need to download the model manually from the Hugging Face website or use the token in your download request\n\n'
             'Model page: $modelPageUrl',
           );
