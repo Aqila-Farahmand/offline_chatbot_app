@@ -8,6 +8,8 @@ export const WASM_BASE_PATH = '/assets/mediapipe/wasm';
 // Single canonical path for model assets (matches path_configs.dart)
 export const MODEL_ASSET_PATH = '/assets/models/';
 
-export const node_modules = {
-  '@mediapipe/tasks-genai': './node_modules/@mediapipe/tasks-genai/',
-};
+// Note: node_modules export removed - app uses bundled genai_bundle.mjs instead
+// If you need to regenerate the bundle, you can temporarily add:
+// export const node_modules = {
+//   '@mediapipe/tasks-genai': './node_modules/@mediapipe/tasks-genai/',
+// };
