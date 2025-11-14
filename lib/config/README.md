@@ -12,7 +12,7 @@ This directory contains platform-agnostic configuration files that are accessibl
   - `path_configs.dart` - Asset paths
   - `prompt_configs.dart` - Prompt templates
   - `admin_config.dart` - Admin user lists
-  - `firebase/` - Platform-specific Firebase configs
+  - `firebase/` - Platform-specific Firebase configs (**auto-generated**, do not edit manually)
 
 ### Web-Specific JavaScript Configs (`web/config/`)
 - **Location**: `web/config/config.js`
