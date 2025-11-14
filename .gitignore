@@ -10,7 +10,10 @@ lib/config/admin_config.dart
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 macos/Runner/GoogleService-Info.plist
+web/firebase-config.js
 
+**/google-services.json
+**/GoogleService-Info.plist
 
 
 
@@ -71,6 +74,10 @@ models/
 # eval related
 .deepeval/
 .env/
+.env
+.env.firebase.config
+
+
 build/
 cache/
 # Coverage reports
