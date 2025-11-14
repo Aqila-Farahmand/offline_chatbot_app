@@ -1,6 +1,6 @@
 # Firebase Configuration Environment Variables
-# Copy this file to .env.firebase.config and fill in your actual values
-# DO NOT commit .env.firebase.config to version control
+# Copy this file to firebase.configs and fill in your actual values
+# DO NOT commit firebase.configs to version control
 
 # Common Firebase Project Settings
 FIREBASE_PROJECT_ID=your-project-id

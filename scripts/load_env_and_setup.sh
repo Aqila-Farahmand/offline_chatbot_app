@@ -1,5 +1,5 @@
 #!/bin/bash
-# Helper script to load .env.firebase.config (or .env) and run Firebase setup
+# Helper script to load .firebase.configs (or .env) and run Firebase setup
 # Usage: ./scripts/load_env_and_setup.sh
 
 set -e
@@ -17,13 +17,13 @@ cd "$PROJECT_ROOT"
 # Debug: Show current directory (only if DEBUG is set)
 if [ -n "$DEBUG" ]; then
     echo -e "${YELLOW}Debug: Current directory: $(pwd)${NC}"
-    echo -e "${YELLOW}Debug: Looking for .env.firebase.config in: $PROJECT_ROOT${NC}"
+    echo -e "${YELLOW}Debug: Looking for .firebase.configs in: $PROJECT_ROOT${NC}"
 fi
 
 ENV_FILE=""
-if [ -f .env.firebase.config ]; then
-    ENV_FILE=".env.firebase.config"
-    echo -e "${GREEN}Loading environment variables from .env.firebase.config...${NC}"
+if [ -f .firebase.configs ]; then
+    ENV_FILE=".firebase.configs"
+    echo -e "${GREEN}Loading environment variables from .firebase.configs...${NC}"
 elif [ -f .env ]; then
     ENV_FILE=".env"
     echo -e "${GREEN}Loading environment variables from .env...${NC}"
@@ -35,8 +35,8 @@ if [ -n "$ENV_FILE" ]; then
     set +a
     echo -e "${GREEN}✓ Loaded environment variables from $ENV_FILE${NC}"
 else
-    echo -e "${YELLOW}  No .env.firebase.config or .env file found. Using environment variables from shell.${NC}"
-    echo "Create a .env.firebase.config file in the project root with your Firebase configuration."
+    echo -e "${YELLOW}  No .firebase.configs or .env file found. Using environment variables from shell.${NC}"
+    echo "Create a .firebase.configs file in the project root with your Firebase configuration."
     echo "See docs/FIREBASE_ENV_VARIABLES.md for details."
 fi
 

@@ -3,7 +3,7 @@
 # Script to set up Firebase configuration files from environment variables or secure sources
 # This script generates:
 # 1. Native Firebase config files (google-services.json, GoogleService-Info.plist)
-# 2. Dart config files (web_config.dart, android_config.dart, ios_config.dart, macos_config.dart, windows_config.dart)
+# 2. lib/firebase_options.dart (generated directly from .firebase.configs, no intermediate files needed)
 
 set -e
 
@@ -178,8 +178,9 @@ if [ -n "$FIREBASE_GOOGLE_APP_ID_MACOS" ] || [ -n "$FIREBASE_GOOGLE_APP_ID_IOS" 
 EOF
 fi
 
-# Generate Dart config files
-echo -e "${GREEN}Generating Dart config files...${NC}"
+# Generate firebase_options.dart directly from environment variables
+# This eliminates the need for intermediate config files in lib/config/firebase/
+echo -e "${GREEN}Generating lib/firebase_options.dart...${NC}"
 
 # Set defaults for optional variables
 MACOS_API_KEY=${FIREBASE_API_KEY_MACOS:-$FIREBASE_API_KEY_IOS}
@@ -189,69 +190,87 @@ WINDOWS_APP_ID=${FIREBASE_APP_ID_WINDOWS:-$FIREBASE_APP_ID_WEB}
 WINDOWS_AUTH_DOMAIN=${FIREBASE_AUTH_DOMAIN_WINDOWS:-$FIREBASE_AUTH_DOMAIN_WEB}
 WINDOWS_MEASUREMENT_ID=${FIREBASE_MEASUREMENT_ID_WINDOWS:-$FIREBASE_MEASUREMENT_ID_WEB}
 
-# Generate web_config.dart
-echo -e "${GREEN}Generating lib/config/firebase/web_config.dart...${NC}"
-cat > lib/config/firebase/web_config.dart << EOF
-class WebConfig {
-  static const String apiKey = '${FIREBASE_API_KEY_WEB}';
-  static const String appId = '${FIREBASE_APP_ID_WEB}';
-  static const String messagingSenderId = '${FIREBASE_PROJECT_NUMBER}';
-  static const String projectId = '${FIREBASE_PROJECT_ID}';
-  static const String authDomain = '${FIREBASE_AUTH_DOMAIN_WEB}';
-  static const String storageBucket = '${FIREBASE_STORAGE_BUCKET}';
-  static const String measurementId = '${FIREBASE_MEASUREMENT_ID_WEB}';
-}
-EOF
+cat > lib/firebase_options.dart << EOF
+// File generated from .firebase.configs
+// WARNING: This file contains REAL Firebase API keys and credentials
+// DO NOT edit manually - changes will be overwritten
+// Regenerate with: ./scripts/load_env_and_setup.sh
+// ignore_for_file: type=lint
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-# Generate android_config.dart
-echo -e "${GREEN}Generating lib/config/firebase/android_config.dart...${NC}"
-cat > lib/config/firebase/android_config.dart << EOF
-class AndroidConfig {
-  static const String apiKey = '${FIREBASE_API_KEY_ANDROID}';
-  static const String appId = '${FIREBASE_MOBILE_SDK_APP_ID_ANDROID}';
-  static const String messagingSenderId = '${FIREBASE_PROJECT_NUMBER}';
-  static const String projectId = '${FIREBASE_PROJECT_ID}';
-  static const String storageBucket = '${FIREBASE_STORAGE_BUCKET}';
-}
-EOF
+class DefaultFirebaseOptions {
+  static FirebaseOptions get currentPlatform {
+    if (kIsWeb) {
+      return web;
+    }
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return android;
+      case TargetPlatform.iOS:
+        return ios;
+      case TargetPlatform.macOS:
+        return macos;
+      case TargetPlatform.windows:
+        return windows;
+      case TargetPlatform.linux:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the setup script again.',
+        );
+      default:
+        throw UnsupportedError(
+          'DefaultFirebaseOptions are not supported for this platform.',
+        );
+    }
+  }
 
-# Generate ios_config.dart
-echo -e "${GREEN}Generating lib/config/firebase/ios_config.dart...${NC}"
-cat > lib/config/firebase/ios_config.dart << EOF
-class IosConfig {
-  static const String apiKey = '${FIREBASE_API_KEY_IOS}';
-  static const String appId = '${FIREBASE_GOOGLE_APP_ID_IOS}';
-  static const String messagingSenderId = '${FIREBASE_PROJECT_NUMBER}';
-  static const String projectId = '${FIREBASE_PROJECT_ID}';
-  static const String storageBucket = '${FIREBASE_STORAGE_BUCKET}';
-  static const String iosBundleId = 'it.aqila.farahmand.medicoai.ios';
-}
-EOF
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: '${FIREBASE_API_KEY_WEB}',
+    appId: '${FIREBASE_APP_ID_WEB}',
+    messagingSenderId: '${FIREBASE_PROJECT_NUMBER}',
+    projectId: '${FIREBASE_PROJECT_ID}',
+    authDomain: '${FIREBASE_AUTH_DOMAIN_WEB}',
+    storageBucket: '${FIREBASE_STORAGE_BUCKET}',
+    measurementId: '${FIREBASE_MEASUREMENT_ID_WEB}',
+  );
 
-# Generate macos_config.dart
-echo -e "${GREEN}Generating lib/config/firebase/macos_config.dart...${NC}"
-cat > lib/config/firebase/macos_config.dart << EOF
-class MacosConfig {
-  static const String apiKey = '${MACOS_API_KEY}';
-  static const String appId = '${MACOS_APP_ID}';
-  static const String messagingSenderId = '${FIREBASE_PROJECT_NUMBER}';
-  static const String projectId = '${FIREBASE_PROJECT_ID}';
-  static const String storageBucket = '${FIREBASE_STORAGE_BUCKET}';
-  static const String iosBundleId = 'it.aqila.farahmand.medicoai.macos';
-}
-EOF
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: '${FIREBASE_API_KEY_ANDROID}',
+    appId: '${FIREBASE_MOBILE_SDK_APP_ID_ANDROID}',
+    messagingSenderId: '${FIREBASE_PROJECT_NUMBER}',
+    projectId: '${FIREBASE_PROJECT_ID}',
+    storageBucket: '${FIREBASE_STORAGE_BUCKET}',
+  );
 
-# Generate windows_config.dart
-echo -e "${GREEN}Generating lib/config/firebase/windows_config.dart...${NC}"
-cat > lib/config/firebase/windows_config.dart << EOF
-class WindowsConfig {
-  static const String apiKey = '${WINDOWS_API_KEY}';
-  static const String appId = '${WINDOWS_APP_ID}';
-  static const String messagingSenderId = '${FIREBASE_PROJECT_NUMBER}';
-  static const String projectId = '${FIREBASE_PROJECT_ID}';
-  static const String authDomain = '${WINDOWS_AUTH_DOMAIN}';
-  static const String storageBucket = '${FIREBASE_STORAGE_BUCKET}';
-  static const String measurementId = '${WINDOWS_MEASUREMENT_ID}';
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: '${FIREBASE_API_KEY_IOS}',
+    appId: '${FIREBASE_GOOGLE_APP_ID_IOS}',
+    messagingSenderId: '${FIREBASE_PROJECT_NUMBER}',
+    projectId: '${FIREBASE_PROJECT_ID}',
+    storageBucket: '${FIREBASE_STORAGE_BUCKET}',
+    iosBundleId: 'it.aqila.farahmand.medicoai.ios',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: '${MACOS_API_KEY}',
+    appId: '${MACOS_APP_ID}',
+    messagingSenderId: '${FIREBASE_PROJECT_NUMBER}',
+    projectId: '${FIREBASE_PROJECT_ID}',
+    storageBucket: '${FIREBASE_STORAGE_BUCKET}',
+    iosBundleId: 'it.aqila.farahmand.medicoai.macos',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: '${WINDOWS_API_KEY}',
+    appId: '${WINDOWS_APP_ID}',
+    messagingSenderId: '${FIREBASE_PROJECT_NUMBER}',
+    projectId: '${FIREBASE_PROJECT_ID}',
+    authDomain: '${WINDOWS_AUTH_DOMAIN}',
+    storageBucket: '${FIREBASE_STORAGE_BUCKET}',
+    measurementId: '${WINDOWS_MEASUREMENT_ID}',
+  );
 }
 EOF
 

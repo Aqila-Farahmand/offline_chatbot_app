@@ -47,8 +47,40 @@ jobs:
           # FIREBASE_AUTH_DOMAIN_WINDOWS: ${{ secrets.FIREBASE_AUTH_DOMAIN_WINDOWS }}
           # FIREBASE_MEASUREMENT_ID_WINDOWS: ${{ secrets.FIREBASE_MEASUREMENT_ID_WINDOWS }}
         run: |
+          # Ensure we're in the project root
+          cd "${{ github.workspace }}"
+
+          # Ensure required directories exist
+          mkdir -p android/app
+          mkdir -p ios/Runner
+          mkdir -p macos/Runner
+          mkdir -p lib
+
+          # Debug: Check if script exists
+          if [ ! -f "scripts/setup_firebase_config.sh" ]; then
+            echo "Error: setup_firebase_config.sh not found"
+            exit 1
+          fi
+
+          # Make script executable and run with bash explicitly
           chmod +x scripts/setup_firebase_config.sh
-          ./scripts/setup_firebase_config.sh
+
+          # Run the script (it will exit with code 1 if variables are missing)
+          bash scripts/setup_firebase_config.sh || {
+            echo "::error::Firebase setup script failed. Check that all required secrets are set in GitHub repository settings."
+            exit 1
+          }
+
+          # Verify generated files exist
+          if [ ! -f "android/app/google-services.json" ]; then
+            echo "::error::google-services.json was not generated"
+            exit 1
+          fi
+          if [ ! -f "lib/firebase_options.dart" ]; then
+            echo "::error::firebase_options.dart was not generated"
+            exit 1
+          fi
+          echo "✓ Firebase configuration files generated successfully"
 
       - name: Build Android
         run: flutter build apk --release

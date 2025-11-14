@@ -79,11 +79,18 @@ To set up Firebase authentication:
 
 **Recommended: Using Environment Variables**
 
-1. Copy `.env.firebase.config.example` to `.env.firebase.config` and fill in your Firebase configuration values
-2. Run `./scripts/load_env_and_setup.sh` to generate all Firebase config files
-3. See [Firebase Environment Variables Guide](docs/FIREBASE_ENV_VARIABLES.md) for detailed instructions
+1. Copy `.firebase.configs.example` to `.firebase.configs` and fill in your Firebase configuration values
+2. Run `./scripts/load_env_and_setup.sh` to generate all Firebase config files:
+   - **Native config files**: `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`, `macos/Runner/GoogleService-Info.plist`
+   - **Dart config files**: `lib/config/firebase/*_config.dart` (auto-generated, do not edit manually)
+3. The generated Dart configs are used by `lib/firebase_options.dart` → `lib/main.dart`
+4. See [Firebase Environment Variables Guide](docs/FIREBASE_ENV_VARIABLES.md) for detailed instructions
 
-**Note:** The script will also check for `.env` as a fallback if `.env.firebase.config` is not found.
+**Note:**
+
+- The script will also check for `.env` as a fallback if `.firebase.configs` is not found
+- The files in `lib/config/firebase/` are auto-generated and should NOT be edited manually
+- These files are in `.gitignore` and will be regenerated from your `.firebase.configs` file
 
 **Alternative Methods:**
 

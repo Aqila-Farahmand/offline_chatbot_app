@@ -1,0 +1,23 @@
+#  SECURITY WARNING 
+# 
+# This file contains REAL Firebase API keys and credentials
+# 
+# DO NOT:
+# - Commit this file to version control (it's in .gitignore)
+# - Share this file publicly
+# - Email or send this file to anyone
+# - Store in unsecured locations
+#
+# DO:
+# - Keep this file secure and private
+# - Use environment variables in CI/CD instead
+# - Rotate keys if they're accidentally exposed
+# - Use the .firebase.configs.example template for sharing structure
+#
+# If this file is accidentally committed or exposed:
+# 1. Rotate ALL Firebase API keys immediately in Firebase Console
+# 2. Update this file with new keys
+# 3. Regenerate config files: ./scripts/load_env_and_setup.sh
+# 4. Review Firebase usage logs for unauthorized access
+#
+# See docs/FIREBASE_SECURITY_CHECKLIST.md for more information
