@@ -23,8 +23,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mediapipe/tasks-genai": "^0.10.25",
-    "firebase": "^12.5.0",
-    "npm": "^11.6.0"
+    "@mediapipe/tasks-genai": "^0.10.25"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.28.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.1.1"
   }
 }
