@@ -47,6 +47,7 @@ jobs:
           # FIREBASE_AUTH_DOMAIN_WINDOWS: ${{ secrets.FIREBASE_AUTH_DOMAIN_WINDOWS }}
           # FIREBASE_MEASUREMENT_ID_WINDOWS: ${{ secrets.FIREBASE_MEASUREMENT_ID_WINDOWS }}
         run: |
+          set -e
           # Ensure we're in the project root
           cd "${{ github.workspace }}"
 
@@ -58,18 +59,23 @@ jobs:
 
           # Debug: Check if script exists
           if [ ! -f "scripts/setup_firebase_config.sh" ]; then
-            echo "Error: setup_firebase_config.sh not found"
+            echo "::error::setup_firebase_config.sh not found"
             exit 1
           fi
 
-          # Make script executable and run with bash explicitly
+          # Make script executable
           chmod +x scripts/setup_firebase_config.sh
 
-          # Run the script (it will exit with code 1 if variables are missing)
-          bash scripts/setup_firebase_config.sh || {
+          # Run the script with explicit error handling
+          # The script uses set -e internally, so we need to handle errors carefully
+          if ! bash scripts/setup_firebase_config.sh; then
             echo "::error::Firebase setup script failed. Check that all required secrets are set in GitHub repository settings."
+            echo "::error::Required secrets: FIREBASE_PROJECT_ID, FIREBASE_PROJECT_NUMBER, FIREBASE_STORAGE_BUCKET,"
+            echo "::error::FIREBASE_API_KEY_ANDROID, FIREBASE_MOBILE_SDK_APP_ID_ANDROID,"
+            echo "::error::FIREBASE_API_KEY_IOS, FIREBASE_GOOGLE_APP_ID_IOS,"
+            echo "::error::FIREBASE_API_KEY_WEB, FIREBASE_APP_ID_WEB, FIREBASE_AUTH_DOMAIN_WEB"
             exit 1
-          }
+          fi
 
           # Verify generated files exist
           if [ ! -f "android/app/google-services.json" ]; then
