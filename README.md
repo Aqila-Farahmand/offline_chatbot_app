@@ -79,7 +79,7 @@ To set up Firebase authentication:
 
 - Generate `firebase_options.dart` via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
 
-**⚠️ Security Note:** Firebase configuration files contain API keys and should not be committed to version control. See [Firebase Security Setup Guide](docs/FIREBASE_SECURITY_SETUP.md) for secure configuration management.
+**Security Note:** Firebase configuration files contain API keys and should not be committed to version control. See [Firebase Security Setup Guide](docs/FIREBASE_SECURITY_SETUP.md) for secure configuration management.
 
 ---
 
