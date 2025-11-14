@@ -77,7 +77,19 @@ assets/models/              # Pre-bundled .gguf or .task llm models
 
 To set up Firebase authentication:
 
-- Generate `firebase_options.dart` via `flutterfire configure` _or_ copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`).
+**Recommended: Using Environment Variables**
+
+1. Copy `.env.firebase.config.example` to `.env.firebase.config` and fill in your Firebase configuration values
+2. Run `./scripts/load_env_and_setup.sh` to generate all Firebase config files
+3. See [Firebase Environment Variables Guide](docs/FIREBASE_ENV_VARIABLES.md) for detailed instructions
+
+**Note:** The script will also check for `.env` as a fallback if `.env.firebase.config` is not found.
+
+**Alternative Methods:**
+
+- Generate `firebase_options.dart` via `flutterfire configure`
+- Copy your Google-service files into each platform directory (`GoogleService-Info.plist`, `google-services.json`)
+- Manually set environment variables and run `./scripts/setup_firebase_config.sh`
 
 **Security Note:** Firebase configuration files contain API keys and should not be committed to version control. See [Firebase Security Setup Guide](docs/FIREBASE_SECURITY_SETUP.md) for secure configuration management.
 
