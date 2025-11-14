@@ -182,81 +182,53 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildPrivacySettings(BuildContext context, ColorScheme colorScheme) {
-    return FutureBuilder<bool>(
-      future: PrivacyService.isRemoteLoggingEnabled(),
-      builder: (context, snapshot) {
-        final isEnabled = snapshot.data ?? false;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return FutureBuilder<bool>(
+          future: PrivacyService.isRemoteLoggingEnabled(),
+          builder: (context, snapshot) {
+            final isEnabled = snapshot.data ?? false;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Privacy notice
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colorScheme.primary.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Research Data Collection',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'MedicoAI is a prototype app. Chat history may be collected '
-                    'for research and study purposes only. You can opt-in or '
-                    'opt-out at any time. Your privacy is our priority.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.4,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Privacy notice
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      width: 1,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Consent toggle
-            Row(
-              children: [
-                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Share Chat History for Research',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 20,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Research Data Collection',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Text(
-                        isEnabled
-                            ? 'Your chat history is being shared anonymously for research purposes.'
-                            : 'Chat history is not being shared. Your conversations remain private.',
+                        'MedicoAI is a prototype app. Chat history may be collected '
+                        'for research and study purposes only. You can opt-in or '
+                        'opt-out at any time. Your privacy is our priority.',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurfaceVariant,
@@ -266,177 +238,259 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Switch(
-                  value: isEnabled,
-                  onChanged: (value) async {
-                    if (value) {
-                      // Show consent dialog before enabling
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(
-                            'Research Data Collection',
+                const SizedBox(height: 20),
+                // Consent toggle
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Share Chat History for Research',
                             style: TextStyle(
-                              color: colorScheme.onSurface,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: isEnabled
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurface,
                             ),
                           ),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'By enabling this, you consent to:',
+                          const SizedBox(height: 4),
+                          Text(
+                            isEnabled
+                                ? 'Your chat history is being shared anonymously for research purposes.'
+                                : 'Chat history is not being shared. Your conversations remain private.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isEnabled
+                                  ? colorScheme.onSurface
+                                  : colorScheme.onSurfaceVariant,
+                              fontWeight: isEnabled
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Switch(
+                      value: isEnabled,
+                      thumbColor: WidgetStateProperty.resolveWith<Color>((
+                        Set<WidgetState> states,
+                      ) {
+                        if (states.contains(WidgetState.disabled)) {
+                          return colorScheme.onSurface.withValues(alpha: 0.38);
+                        }
+                        if (isEnabled) {
+                          return colorScheme.onPrimary;
+                        }
+                        return colorScheme.onSurfaceVariant;
+                      }),
+                      trackColor: WidgetStateProperty.resolveWith<Color>((
+                        Set<WidgetState> states,
+                      ) {
+                        if (states.contains(WidgetState.disabled)) {
+                          return colorScheme.onSurface.withValues(alpha: 0.12);
+                        }
+                        if (isEnabled) {
+                          return colorScheme.primary;
+                        }
+                        return colorScheme.surfaceContainerHighest;
+                      }),
+                      trackOutlineColor:
+                          WidgetStateProperty.resolveWith<Color?>((
+                            Set<WidgetState> states,
+                          ) {
+                            if (states.contains(WidgetState.disabled)) {
+                              return null;
+                            }
+                            if (isEnabled) {
+                              return colorScheme.primary;
+                            }
+                            return colorScheme.outline.withValues(alpha: 0.5);
+                          }),
+                      onChanged: (value) async {
+                        if (value) {
+                          // Show consent dialog before enabling
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(
+                                'Research Data Collection',
                                 style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
+                                  color: colorScheme.onSurface,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              _buildConsentItem(
-                                context,
-                                'Your chat history will be collected for research purposes only',
-                                colorScheme,
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'By enabling this, you consent to:',
+                                    style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildConsentItem(
+                                    context,
+                                    'Your chat history will be collected for research purposes only',
+                                    colorScheme,
+                                  ),
+                                  _buildConsentItem(
+                                    context,
+                                    'Data is anonymized and used to improve the prototype',
+                                    colorScheme,
+                                  ),
+                                  _buildConsentItem(
+                                    context,
+                                    'You can opt-out at any time in settings',
+                                    colorScheme,
+                                  ),
+                                  _buildConsentItem(
+                                    context,
+                                    'Your privacy and data security are our priority',
+                                    colorScheme,
+                                  ),
+                                ],
                               ),
-                              _buildConsentItem(
-                                context,
-                                'Data is anonymized and used to improve the prototype',
-                                colorScheme,
-                              ),
-                              _buildConsentItem(
-                                context,
-                                'You can opt-out at any time in settings',
-                                colorScheme,
-                              ),
-                              _buildConsentItem(
-                                context,
-                                'Your privacy and data security are our priority',
-                                colorScheme,
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color: colorScheme.onSurfaceVariant,
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('I Consent'),
-                            ),
-                          ],
-                        ),
-                      );
-
-                      if (confirmed == true) {
-                        await PrivacyService.setConsentForRemoteLogging(true);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Research data collection enabled. Thank you for contributing!',
-                              ),
-                              backgroundColor: colorScheme.primaryContainer,
-                              behavior: SnackBarBehavior.floating,
+                                FilledButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('I Consent'),
+                                ),
+                              ],
                             ),
                           );
+
+                          if (confirmed == true) {
+                            await PrivacyService.setConsentForRemoteLogging(
+                              true,
+                            );
+                            setState(() {}); // Refresh the UI
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    'Research data collection enabled. Thank you for contributing!',
+                                  ),
+                                  backgroundColor: colorScheme.primaryContainer,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
+                        } else {
+                          // Disable immediately
+                          await PrivacyService.setRemoteLoggingEnabled(false);
+                          setState(() {}); // Refresh the UI
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'Research data collection disabled. Your chat history will no longer be shared.',
+                                ),
+                                backgroundColor:
+                                    colorScheme.surfaceContainerHighest,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
                         }
-                      }
-                    } else {
-                      // Disable immediately
-                      await PrivacyService.setRemoteLoggingEnabled(false);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Data deletion option
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(
+                          'Request Data Deletion',
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        content: Text(
+                          'This will disable data collection and request deletion of your '
+                          'existing chat history from our research database. '
+                          'Contact an administrator for immediate deletion.',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: colorScheme.errorContainer,
+                              foregroundColor: colorScheme.onErrorContainer,
+                            ),
+                            child: const Text('Request Deletion'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true) {
+                      final success =
+                          await PrivacyService.requestDataDeletion();
+                      setState(() {}); // Refresh the UI
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text(
-                              'Research data collection disabled. Your chat history will no longer be shared.',
+                            content: Text(
+                              success
+                                  ? 'Data collection disabled. Contact admin for data deletion.'
+                                  : 'Error processing request. Please try again.',
                             ),
-                            backgroundColor:
-                                colorScheme.surfaceContainerHighest,
+                            backgroundColor: success
+                                ? colorScheme.surfaceContainerHighest
+                                : colorScheme.errorContainer,
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
                       }
                     }
                   },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Request Data Deletion'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            // Data deletion option
-            OutlinedButton.icon(
-              onPressed: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text(
-                      'Request Data Deletion',
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    content: Text(
-                      'This will disable data collection and request deletion of your '
-                      'existing chat history from our research database. '
-                      'Contact an administrator for immediate deletion.',
-                      style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(color: colorScheme.onSurfaceVariant),
-                        ),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: colorScheme.errorContainer,
-                          foregroundColor: colorScheme.onErrorContainer,
-                        ),
-                        child: const Text('Request Deletion'),
-                      ),
-                    ],
-                  ),
-                );
-
-                if (confirmed == true) {
-                  final success = await PrivacyService.requestDataDeletion();
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
-                              ? 'Data collection disabled. Contact admin for data deletion.'
-                              : 'Error processing request. Please try again.',
-                        ),
-                        backgroundColor: success
-                            ? colorScheme.surfaceContainerHighest
-                            : colorScheme.errorContainer,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                }
-              },
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('Request Data Deletion'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-            ),
-          ],
+            );
+          },
         );
       },
     );
