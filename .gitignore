@@ -19,6 +19,11 @@ lib/config/firebase/
 .firebase.configs
 
 
+# work report related
+WORK_REPORT_LAST_TWO_MONTHS.txt
+MEDICOAI_DEVELOPMENT_REPORT.html
+PDF_CONVERSION_INSTRUCTIONS.txt
+convert_to_pdf.py
 
 
 
