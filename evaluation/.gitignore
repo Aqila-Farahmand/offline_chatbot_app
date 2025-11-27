@@ -17,7 +17,3 @@ __pycache__/
 .env
 .secrets
 dart/.DS_Store
-dataset/chatdoctor_healthcaremagic_100k.csv
-dataset/chatdoctor_healthcaremagic_train.csv
-dataset/chatdoctor_healthcaremagic_test.csv
-
