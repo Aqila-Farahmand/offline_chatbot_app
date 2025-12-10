@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import '../services/user_service.dart';
+import '../firebase_options.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,30 +18,105 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _lastnameController = TextEditingController();
   bool _isLoading = false;
+  bool _isResettingPassword = false;
   bool _isSignUp = false; // toggles between login and sign-up modes
   String? _error;
 
   Future<void> _resetPassword() async {
-    if (_emailController.text.trim().isEmpty) {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
       setState(() => _error = 'Enter your email to reset password.');
       return;
     }
 
+    // Basic email validation
+    if (!email.contains('@') || !email.contains('.')) {
+      setState(() => _error = 'Please enter a valid email address.');
+      return;
+    }
+
+    setState(() {
+      _isResettingPassword = true;
+      _error = null;
+    });
+
     try {
+      // For web apps, we need to specify actionCodeSettings to tell Firebase
+      // where to redirect users after they click the password reset link.
+      // This is required after Firebase Dynamic Links deprecation.
+      // We must use Firebase Hosting domain instead of Dynamic Links.
+      ActionCodeSettings? actionCodeSettings;
+
+      if (kIsWeb) {
+        final projectId = DefaultFirebaseOptions.web.projectId;
+        final authDomain = DefaultFirebaseOptions.web.authDomain;
+
+        String continueUrl;
+        // Try to use .web.app domain first (Firebase Hosting default)
+        if (authDomain?.contains('.firebaseapp.com') ?? false) {
+          // Replace .firebaseapp.com with .web.app for Hosting domain
+          continueUrl = 'https://$projectId.web.app/';
+        } else if (authDomain != null) {
+          // Fallback to authDomain
+          continueUrl = 'https://$authDomain/';
+        } else {
+          // Last resort: construct from projectId
+          continueUrl = 'https://$projectId.web.app/';
+        }
+
+        actionCodeSettings = ActionCodeSettings(
+          url: continueUrl,
+          handleCodeInApp: false, // Open in browser, not in-app
+        );
+      }
+
       await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: _emailController.text.trim(),
+        email: email,
+        actionCodeSettings: actionCodeSettings,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password reset email sent.')),
+          const SnackBar(
+            content: Text('Password reset email sent. Check your inbox.'),
+            duration: Duration(seconds: 5),
+          ),
         );
+        // Clear the error state on success
+        setState(() => _error = null);
       }
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
-      setState(() => _error = e.message);
-    } catch (_) {
-      setState(() => _error = 'An unexpected error occurred');
+      String errorMessage;
+
+      // Provide more user-friendly error messages
+      if (e.code == 'user-not-found') {
+        errorMessage = 'No account found with this email address.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email address format.';
+      } else if (e.code == 'too-many-requests') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (e.code == 'unauthorized-domain') {
+        errorMessage = 'This domain is not authorized. Please contact support.';
+      } else if (e.code == 'invalid-continue-uri') {
+        errorMessage = 'Invalid redirect URL. Please contact support.';
+      } else {
+        errorMessage = e.message ?? 'Failed to send password reset email.';
+      }
+
+      if (mounted) {
+        setState(() => _error = errorMessage);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => _error = 'An unexpected error occurred. Please try again.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isResettingPassword = false);
+      }
     }
   }
 
@@ -100,8 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await userAuth?.sendEmailVerification();
     } on FirebaseAuthException catch (e) {
-      debugPrint('FirebaseAuth error: ${e.code} | ${e.message}');
-      setState(() => _error = e.message);
+      setState(() => _error = e.message ?? 'An error occurred during sign up.');
     } catch (e) {
       setState(() {
         _error = 'An unexpected error occurred';
@@ -278,12 +354,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 if (!_isSignUp)
-                  TextButton(
-                    onPressed: _isLoading ? null : _resetPassword,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextButton(
+                      onPressed: _isResettingPassword ? null : _resetPassword,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      child: _isResettingPassword
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Forgot password?'),
                     ),
-                    child: const Text('Forgot password?'),
                   ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
