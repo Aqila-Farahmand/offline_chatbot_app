@@ -146,20 +146,16 @@ class LLMService {
         }
       }
 
-      if (kDebugMode) {
-        print(
-          'LLMService: Starting initialization with model path: $_modelAssetPath',
-        );
-      }
+      // Always log model path (helps debug production issues)
+      print(
+        'LLMService: Starting initialization with model path: $_modelAssetPath',
+      );
 
       // Wait briefly for the JS bridge to be available (module may load async).
-      const int maxWaitMs = 10000; // Increased timeout
+      const int maxWaitMs = 15000; // Increased timeout for production
       const int intervalMs = 200;
       int waited = 0;
       while (_mediapipeGenai == null && waited < maxWaitMs) {
-        if (kDebugMode) {
-          print('Waiting for MediapipeGenai JS bridge... (${waited}ms)');
-        }
         await Future.delayed(Duration(milliseconds: intervalMs));
         waited += intervalMs;
       }
@@ -168,16 +164,11 @@ class LLMService {
       if (mp == null) {
         lastError =
             'MediapipeGenai JS bridge not found after ${maxWaitMs}ms. '
-            'Make sure mediapipe_text.js is loaded in index.html.';
-        if (kDebugMode) {
-          print('ERROR: $lastError');
-          print('Check browser console for JavaScript errors.');
-        }
+            'Make sure mediapipe_text.js is loaded in index.html. '
+            'Check browser console (F12) for JavaScript errors.';
+        // Always log critical errors, even in production
+        print('ERROR: $lastError');
         throw Exception(lastError);
-      }
-
-      if (kDebugMode) {
-        print('MediapipeGenai JS bridge found. Initializing with options...');
       }
 
       final options = InitOptions(
@@ -188,41 +179,49 @@ class LLMService {
         maxTokens: maxTokens,
       );
 
-      if (kDebugMode) {
-        print('LLMService: Calling MediapipeGenai.init with:');
-        print('  - modelAssetPath: $_modelAssetPath');
-        print('  - tasksModulePath: ${AppPaths.tasksModulePath}');
-        print('  - wasmBasePath: ${AppPaths.wasmBasePath}');
-        print('  - cpuOnly: $preferCpuOnly');
-        print('  - maxTokens: $maxTokens');
-      }
+      // Always log initialization attempt (helps debug production issues)
+      print(
+        'LLMService: Initializing MediapipeGenai with model: $_modelAssetPath',
+      );
 
       try {
-        await mp.init(options).toDart;
+        // Add timeout to prevent hanging indefinitely
+        // Increased to 90 seconds as MediaPipe can take time to fully initialize
+        await mp
+            .init(options)
+            .toDart
+            .timeout(
+              const Duration(seconds: 90),
+              onTimeout: () {
+                throw TimeoutException(
+                  'MediaPipe GenAI initialization timed out after 90 seconds. '
+                  'The graph may have started but initialization did not complete. '
+                  'Check browser console (F12) for MediaPipe status events.',
+                );
+              },
+            );
       } catch (initError) {
         // Capture more detailed error from JavaScript
         final errorStr = initError.toString();
         lastError =
             'MediaPipe GenAI initialization failed: $errorStr\n'
             'Model path: $_modelAssetPath\n'
-            'Check browser console for detailed JavaScript errors.';
-        if (kDebugMode) {
-          print('ERROR during MediapipeGenai.init: $errorStr');
-        }
+            'Tasks module: ${AppPaths.tasksModulePath}\n'
+            'WASM base: ${AppPaths.wasmBasePath}\n'
+            'Check browser console (F12) for detailed JavaScript errors.';
+        // Always log errors in production for debugging
+        print('ERROR during MediapipeGenai.init: $errorStr');
         rethrow;
       }
 
       _isInitialized = true;
       lastError = null;
-      if (kDebugMode) {
-        print(
-          'LLMService initialized successfully with model: $_modelAssetPath',
-        );
-      }
+      print('LLMService initialized successfully with model: $_modelAssetPath');
     } catch (e, stackTrace) {
       lastError = e.toString();
+      // Always log errors, even in production
+      print('LLMService initialization error: $e');
       if (kDebugMode) {
-        print('LLMService initialization error: $e');
         print('Stack trace: $stackTrace');
       }
       rethrow;

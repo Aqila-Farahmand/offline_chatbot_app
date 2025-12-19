@@ -45,15 +45,23 @@ class AppState extends ChangeNotifier {
         try {
           await LLMService.initialize();
           setModelLoaded(true);
-          debugPrint('Model initialized successfully');
+          print('Model initialized successfully'); // Always log success
         } catch (llmError) {
           // Capture LLM-specific errors with more detail
           final errorMsg = LLMService.lastErrorMessage ?? llmError.toString();
           _initializationError =
               'LLM initialization failed: $errorMsg\n\n'
               'Model: ${_modelManager.selectedModel!.filename}\n'
-              'Check browser console (F12) for detailed errors.';
-          debugPrint('LLM initialization error: $llmError');
+              'Check browser console (F12) for detailed errors.\n'
+              'Common issues:\n'
+              '- MediaPipe module not loading (check network tab)\n'
+              '- Model file not found (check assets are deployed)\n'
+              '- WebAssembly not supported (check browser compatibility)';
+          // Always log errors, even in production
+          print('LLM initialization error: $llmError');
+          if (kDebugMode) {
+            debugPrint('Full error details: $errorMsg');
+          }
           setModelLoaded(false);
           rethrow; // Re-throw to be caught by outer catch
         }
